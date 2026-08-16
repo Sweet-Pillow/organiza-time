@@ -38,7 +38,8 @@ export function DrawSetup({ players }: DrawSetupProps) {
   const teamCount =
     teamSize > 0 ? Math.floor(selectedPlayers.length / teamSize) : 0
   const leftoverCount =
-    teamSize > 0 ? selectedPlayers.length - teamCount * teamSize : selectedPlayers.length
+    teamSize > 0 ? selectedPlayers.length % teamSize : 0
+  const canDraw = selectedPlayers.length > 0 && teamSize > 0
 
   function togglePlayer(id: string) {
     setResult(null)
@@ -64,7 +65,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
   }
 
   function handleDraw() {
-    if (teamCount < 1) return
+    if (!canDraw) return
     setResult(drawTeams(selectedPlayers, teamSize, { balanceByGender }))
   }
 
@@ -177,7 +178,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
           <div className="flex">
             <button
               type="button"
-              disabled={teamCount < 1}
+              disabled={!canDraw}
               onClick={handleDraw}
               className="bg-brand hover:bg-brand-hover w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
             >
@@ -202,14 +203,24 @@ export function DrawSetup({ players }: DrawSetupProps) {
         <p className="text-xs text-stone-600 sm:text-sm">
           <strong>{selectedPlayers.length}</strong> participante
           {selectedPlayers.length !== 1 ? 's' : ''} →{' '}
-          {teamCount > 0 ? (
+          {canDraw ? (
             <>
-              <strong>{teamCount}</strong> time{teamCount !== 1 ? 's' : ''} de{' '}
-              <strong>{teamSize}</strong>
-              {leftoverCount > 0 ? <> ({leftoverCount} sobrando)</> : null}
+              {teamCount > 0 ? (
+                <>
+                  <strong>{teamCount}</strong> time{teamCount !== 1 ? 's' : ''} de{' '}
+                  <strong>{teamSize}</strong>
+                </>
+              ) : null}
+              {leftoverCount > 0 ? (
+                <>
+                  {teamCount > 0 ? ' + ' : null}
+                  <strong>1</strong> incompleto ({leftoverCount}/
+                  {teamSize})
+                </>
+              ) : null}
             </>
           ) : (
-            <span>selecione mais jogadores ou reduza o tamanho do time</span>
+            <span>selecione jogadores para sortear</span>
           )}
         </p>
       </section>
@@ -219,7 +230,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
           <h2 className="font-display text-xl font-semibold text-stone-900 sm:text-2xl">
             Resultado
           </h2>
-          <TeamResult result={result} />
+          <TeamResult result={result} teamSize={teamSize} />
         </section>
       ) : null}
     </div>

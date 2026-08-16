@@ -1,8 +1,12 @@
 import type { Player, Sexo } from '../types/player'
 
+export type DrawnTeam = {
+  players: Player[]
+  incomplete: boolean
+}
+
 export type DrawResult = {
-  teams: Player[][]
-  leftover: Player[]
+  teams: DrawnTeam[]
 }
 
 function shuffleStableByStars(players: Player[]): Player[] {
@@ -89,34 +93,17 @@ function assignByLowestStars(
   return leftover
 }
 
-export type DrawOptions = {
-  balanceByGender?: boolean
-}
-
-export function drawTeams(
-  players: Player[],
+function fillFullTeams(
+  participants: Player[],
+  teamCount: number,
   teamSize: number,
-  options: DrawOptions = {},
-): DrawResult {
-  const { balanceByGender = true } = options
-
-  if (teamSize < 1 || players.length < teamSize) {
-    return { teams: [], leftover: [...players] }
-  }
-
-  const teamCount = Math.floor(players.length / teamSize)
-  const shuffled = shuffleStableByStars(players)
-  const participants = shuffled.slice(0, teamCount * teamSize)
-  const leftover = shuffled.slice(teamCount * teamSize)
-
+  balanceByGender: boolean,
+): Player[][] {
   const teams: Player[][] = Array.from({ length: teamCount }, () => [])
 
   if (!balanceByGender) {
-    const extraLeftover = assignByLowestStars(participants, teams, teamSize)
-    return {
-      teams,
-      leftover: [...leftover, ...extraLeftover],
-    }
+    assignByLowestStars(participants, teams, teamSize)
+    return teams
   }
 
   const bySexo: Record<Sexo, Player[]> = {
@@ -134,12 +121,58 @@ export function drawTeams(
 
   const afterMinority = assignRoundRobin(bySexo[minority], teams, teamSize)
   const majorityPool = shuffleStableByStars([...bySexo[majority], ...afterMinority])
-  const extraLeftover = assignByLowestStars(majorityPool, teams, teamSize)
+  assignByLowestStars(majorityPool, teams, teamSize)
 
-  return {
-    teams,
-    leftover: [...leftover, ...extraLeftover],
+  return teams
+}
+
+export type DrawOptions = {
+  balanceByGender?: boolean
+}
+
+export function drawTeams(
+  players: Player[],
+  teamSize: number,
+  options: DrawOptions = {},
+): DrawResult {
+  const { balanceByGender = true } = options
+
+  if (teamSize < 1 || players.length === 0) {
+    return { teams: [] }
   }
+
+  const shuffled = shuffleStableByStars(players)
+  const fullTeamCount = Math.floor(players.length / teamSize)
+  const remainder = players.length % teamSize
+
+  if (fullTeamCount === 0) {
+    return {
+      teams: [
+        {
+          players: shuffled,
+          incomplete: true,
+        },
+      ],
+    }
+  }
+
+  const participants = shuffled.slice(0, fullTeamCount * teamSize)
+  const leftover = shuffled.slice(fullTeamCount * teamSize)
+  const fullTeams = fillFullTeams(participants, fullTeamCount, teamSize, balanceByGender)
+
+  const teams: DrawnTeam[] = fullTeams.map((teamPlayers) => ({
+    players: teamPlayers,
+    incomplete: false,
+  }))
+
+  if (remainder > 0 && leftover.length > 0) {
+    teams.push({
+      players: leftover,
+      incomplete: true,
+    })
+  }
+
+  return { teams }
 }
 
 export function teamStats(team: Player[]) {
