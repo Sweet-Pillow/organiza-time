@@ -4,32 +4,11 @@ import { PlayerFilters } from './components/PlayerFilters'
 import { PlayerForm } from './components/PlayerForm'
 import { PlayerList } from './components/PlayerList'
 import { usePlayers } from './hooks/usePlayers'
+import { filterPlayers } from './lib/filterPlayers'
 import { EMPTY_FILTERS, type PlayerFiltersState } from './types/filters'
 import type { Player, PlayerInput } from './types/player'
 
 type Tab = 'jogadores' | 'sorteio'
-
-function normalizeName(value: string) {
-  return value
-    .trim()
-    .toLocaleLowerCase('pt-BR')
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-}
-
-function filterPlayers(players: Player[], filters: PlayerFiltersState) {
-  const query = normalizeName(filters.nome)
-
-  return players.filter((player) => {
-    if (query && !normalizeName(player.nome).includes(query)) return false
-    if (filters.sexo !== 'todos' && player.sexo !== filters.sexo) return false
-    if (filters.posicao !== 'todos' && player.posicao !== filters.posicao) return false
-    if (filters.estrelas !== 'todos' && player.estrelas !== filters.estrelas) {
-      return false
-    }
-    return true
-  })
-}
 
 export default function App() {
   const { players, addPlayer, updatePlayer, removePlayer } = usePlayers()

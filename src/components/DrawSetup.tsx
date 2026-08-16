@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import { drawTeams, type DrawResult } from '../lib/drawTeams'
+import { filterPlayers } from '../lib/filterPlayers'
+import { EMPTY_FILTERS, type PlayerFiltersState } from '../types/filters'
 import type { Player } from '../types/player'
+import { POSICAO_LABELS } from '../types/player'
+import { PlayerFilters } from './PlayerFilters'
 import { TeamResult } from './TeamResult'
 
 type DrawSetupProps = {
@@ -11,11 +15,21 @@ export function DrawSetup({ players }: DrawSetupProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [teamSize, setTeamSize] = useState(6)
   const [result, setResult] = useState<DrawResult | null>(null)
+  const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
+
+  const visiblePlayers = useMemo(
+    () => filterPlayers(players, filters),
+    [players, filters],
+  )
 
   const selectedPlayers = useMemo(
     () => players.filter((player) => selectedIds.has(player.id)),
     [players, selectedIds],
   )
+
+  const allVisibleSelected =
+    visiblePlayers.length > 0 &&
+    visiblePlayers.every((player) => selectedIds.has(player.id))
 
   const teamCount =
     teamSize > 0 ? Math.floor(selectedPlayers.length / teamSize) : 0
@@ -32,13 +46,17 @@ export function DrawSetup({ players }: DrawSetupProps) {
     })
   }
 
-  function toggleAll() {
+  function toggleVisible() {
     setResult(null)
-    if (selectedIds.size === players.length) {
-      setSelectedIds(new Set())
-      return
-    }
-    setSelectedIds(new Set(players.map((p) => p.id)))
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (allVisibleSelected) {
+        for (const player of visiblePlayers) next.delete(player.id)
+      } else {
+        for (const player of visiblePlayers) next.add(player.id)
+      }
+      return next
+    })
   }
 
   function handleDraw() {
@@ -63,44 +81,72 @@ export function DrawSetup({ players }: DrawSetupProps) {
           </h2>
           <button
             type="button"
-            onClick={toggleAll}
-            className="text-sm font-medium text-teal-800 underline-offset-2 hover:underline"
+            onClick={toggleVisible}
+            disabled={visiblePlayers.length === 0}
+            className="text-sm font-medium text-teal-800 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-stone-400 disabled:no-underline"
           >
-            {selectedIds.size === players.length ? 'Desmarcar todos' : 'Marcar todos'}
+            {allVisibleSelected ? 'Desmarcar visíveis' : 'Marcar visíveis'}
           </button>
         </div>
 
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {players.map((player) => {
-            const checked = selectedIds.has(player.id)
-            return (
-              <li key={player.id}>
-                <label
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
-                    checked
-                      ? 'border-teal-600 bg-teal-50'
-                      : 'border-stone-200 bg-white hover:border-stone-300'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => togglePlayer(player.id)}
-                    className="size-4 accent-teal-700"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium text-stone-900">
-                      {player.nome}
+        <PlayerFilters
+          value={filters}
+          onChange={setFilters}
+          resultCount={visiblePlayers.length}
+          totalCount={players.length}
+        />
+
+        {visiblePlayers.length === 0 ? (
+          <p className="text-sm text-stone-500">
+            Nenhum jogador encontrado com esses filtros.
+          </p>
+        ) : (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {visiblePlayers.map((player) => {
+              const checked = selectedIds.has(player.id)
+              return (
+                <li key={player.id}>
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
+                      checked
+                        ? 'border-teal-600 bg-teal-50'
+                        : 'border-stone-200 bg-white hover:border-stone-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => togglePlayer(player.id)}
+                      className="size-4 accent-teal-700"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium text-stone-900">
+                        {player.nome}
+                      </span>
+                      <span className="text-xs text-stone-500">
+                        {player.estrelas}★ · {player.sexo === 'feminino' ? 'F' : 'M'} ·{' '}
+                        {POSICAO_LABELS[player.posicao]}
+                      </span>
                     </span>
-                    <span className="text-xs text-stone-500">
-                      {player.estrelas}★ · {player.sexo === 'feminino' ? 'F' : 'M'}
-                    </span>
-                  </span>
-                </label>
-              </li>
-            )
-          })}
-        </ul>
+                  </label>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        {selectedPlayers.length > 0 ? (
+          <p className="text-sm text-stone-500">
+            <strong className="text-stone-700">{selectedPlayers.length}</strong>{' '}
+            selecionado{selectedPlayers.length !== 1 ? 's' : ''}
+            {filters.nome ||
+            filters.sexo !== 'todos' ||
+            filters.posicao !== 'todos' ||
+            filters.estrelas !== 'todos'
+              ? ' (filtros só alteram a lista; a seleção permanece)'
+              : null}
+          </p>
+        ) : null}
       </section>
 
       <section className="flex flex-col gap-4 rounded-xl border border-stone-200 bg-white/80 p-4 sm:p-5">
@@ -126,12 +172,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
             <>
               <strong>{teamCount}</strong> time{teamCount !== 1 ? 's' : ''} de{' '}
               <strong>{teamSize}</strong>
-              {leftoverCount > 0 ? (
-                <>
-                  {' '}
-                  ({leftoverCount} sobrando)
-                </>
-              ) : null}
+              {leftoverCount > 0 ? <> ({leftoverCount} sobrando)</> : null}
             </>
           ) : (
             <span>selecione mais jogadores ou reduza o tamanho do time</span>
