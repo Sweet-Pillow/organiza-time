@@ -27,6 +27,9 @@ export function DrawSetup({ players }: DrawSetupProps) {
     [players, selectedIds],
   )
 
+  const mulheres = players.filter((p) => p.sexo === 'feminino').length
+  const homens = players.filter((p) => p.sexo === 'masculino').length
+
   const allVisibleSelected =
     visiblePlayers.length > 0 &&
     visiblePlayers.every((player) => selectedIds.has(player.id))
@@ -94,6 +97,8 @@ export function DrawSetup({ players }: DrawSetupProps) {
           onChange={setFilters}
           resultCount={visiblePlayers.length}
           totalCount={players.length}
+          mulheres={mulheres}
+          homens={homens}
         />
 
         {visiblePlayers.length === 0 ? (

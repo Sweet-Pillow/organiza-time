@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { DrawSetup } from './components/DrawSetup'
+import { Modal } from './components/Modal'
 import { PlayerFilters } from './components/PlayerFilters'
 import { PlayerForm } from './components/PlayerForm'
 import { PlayerList } from './components/PlayerList'
@@ -15,7 +16,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('jogadores')
   const [editing, setEditing] = useState<Player | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
-  const [showForm, setShowForm] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const filteredPlayers = useMemo(
     () => filterPlayers(players, filters),
@@ -25,26 +26,33 @@ export default function App() {
   const mulheres = players.filter((p) => p.sexo === 'feminino').length
   const homens = players.filter((p) => p.sexo === 'masculino').length
 
+  const closeModal = useCallback(() => {
+    setModalOpen(false)
+    setEditing(null)
+  }, [])
+
+  function openCreate() {
+    setEditing(null)
+    setModalOpen(true)
+  }
+
+  function openEdit(player: Player) {
+    setEditing(player)
+    setModalOpen(true)
+  }
+
   function handleSubmit(input: PlayerInput) {
     if (editing) {
       updatePlayer(editing.id, input)
-      setEditing(null)
-      setShowForm(false)
-      return
+    } else {
+      addPlayer(input)
     }
-    addPlayer(input)
-    setShowForm(false)
+    closeModal()
   }
 
   function handleRemove(id: string) {
-    if (editing?.id === id) setEditing(null)
+    if (editing?.id === id) closeModal()
     removePlayer(id)
-  }
-
-  function handleEdit(player: Player) {
-    setEditing(player)
-    setShowForm(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
@@ -95,78 +103,52 @@ export default function App() {
       <main className="relative mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
         {tab === 'jogadores' ? (
           <div className="flex flex-col gap-4 sm:gap-6">
-            <p className="text-sm text-stone-600">
-              <strong>{players.length}</strong> jogador
-              {players.length !== 1 ? 'es' : ''} · {mulheres} mulher
-              {mulheres !== 1 ? 'es' : ''} · {homens}{' '}
-              {homens !== 1 ? 'homens' : 'homem'}
-            </p>
-
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-8">
-              <section className="rounded-xl border border-stone-200 bg-white/90 shadow-sm">
+            <section className="flex min-w-0 flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-display text-xl font-semibold text-stone-900">
+                  Elenco
+                </h2>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (showForm && editing) setEditing(null)
-                    setShowForm((current) => !current)
-                  }}
-                  className="flex w-full items-center justify-between p-3 text-left lg:pointer-events-none lg:p-5 lg:pb-0"
+                  onClick={openCreate}
+                  className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
                 >
-                  <h2 className="font-display text-lg font-semibold text-stone-900 sm:text-xl">
-                    {editing ? 'Editar jogador' : 'Novo jogador'}
-                  </h2>
-                  <span className="text-xl text-teal-800 lg:hidden" aria-hidden>
-                    {showForm ? '−' : '+'}
-                  </span>
+                  + Jogador
                 </button>
-                <div className={`${showForm ? 'block' : 'hidden'} px-3 pb-4 lg:block lg:p-5`}>
-                  <PlayerForm
-                    key={editing?.id ?? 'new'}
-                    initial={editing}
-                    onSubmit={handleSubmit}
-                    onCancel={() => {
-                      setEditing(null)
-                      setShowForm(false)
-                    }}
-                  />
-                </div>
-              </section>
-
-              <section className="flex min-w-0 flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-display text-xl font-semibold text-stone-900">
-                    Elenco
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditing(null)
-                      setShowForm(true)
-                    }}
-                    className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white lg:hidden"
-                  >
-                    + Jogador
-                  </button>
-                </div>
-                <PlayerFilters
-                  value={filters}
-                  onChange={setFilters}
-                  resultCount={filteredPlayers.length}
-                  totalCount={players.length}
-                />
-                <PlayerList
-                  players={filteredPlayers}
-                  totalCount={players.length}
-                  onEdit={handleEdit}
-                  onRemove={handleRemove}
-                />
-              </section>
-            </div>
+              </div>
+              <PlayerFilters
+                value={filters}
+                onChange={setFilters}
+                resultCount={filteredPlayers.length}
+                totalCount={players.length}
+                mulheres={mulheres}
+                homens={homens}
+              />
+              <PlayerList
+                players={filteredPlayers}
+                totalCount={players.length}
+                onEdit={openEdit}
+                onRemove={handleRemove}
+              />
+            </section>
           </div>
         ) : (
           <DrawSetup players={players} />
         )}
       </main>
+
+      <Modal
+        open={modalOpen}
+        title={editing ? 'Editar jogador' : 'Novo jogador'}
+        onClose={closeModal}
+      >
+        <PlayerForm
+          key={editing?.id ?? 'new'}
+          initial={editing}
+          onSubmit={handleSubmit}
+          onCancel={closeModal}
+        />
+      </Modal>
     </div>
   )
 }

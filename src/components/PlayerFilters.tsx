@@ -8,6 +8,8 @@ type PlayerFiltersProps = {
   onChange: (next: PlayerFiltersState) => void
   resultCount: number
   totalCount: number
+  mulheres: number
+  homens: number
 }
 
 const fieldClass =
@@ -18,6 +20,8 @@ export function PlayerFilters({
   onChange,
   resultCount,
   totalCount,
+  mulheres,
+  homens,
 }: PlayerFiltersProps) {
   const hasActiveFilters =
     value.nome.trim() !== '' ||
@@ -117,6 +121,10 @@ export function PlayerFilters({
         <p>
           Mostrando <strong className="text-stone-700">{resultCount}</strong> de{' '}
           <strong className="text-stone-700">{totalCount}</strong>
+          <span className="text-stone-400"> · </span>
+          {mulheres} mulher{mulheres !== 1 ? 'es' : ''}
+          <span className="text-stone-400"> · </span>
+          {homens} {homens !== 1 ? 'homens' : 'homem'}
         </p>
         {hasActiveFilters ? (
           <button

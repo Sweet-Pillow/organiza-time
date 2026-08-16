@@ -18,7 +18,7 @@ export function PlayerList({
   if (totalCount === 0) {
     return (
       <p className="text-sm text-stone-500">
-        Nenhum jogador cadastrado ainda. Use o formulário ao lado para começar.
+        Nenhum jogador cadastrado ainda. Toque em “+ Jogador” para começar.
       </p>
     )
   }

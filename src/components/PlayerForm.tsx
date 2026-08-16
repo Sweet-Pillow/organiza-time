@@ -93,18 +93,18 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 pt-1">
         <button
           type="submit"
-          className="flex-1 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 sm:flex-none sm:py-2"
+          className="flex-1 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 sm:py-2"
         >
           {editing ? 'Salvar alterações' : 'Cadastrar jogador'}
         </button>
-        {editing && onCancel ? (
+        {onCancel ? (
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+            className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 sm:py-2"
           >
             Cancelar
           </button>
