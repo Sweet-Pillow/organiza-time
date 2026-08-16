@@ -6,7 +6,7 @@ type PlayerListProps = {
   players: Player[]
   totalCount: number
   onEdit: (player: Player) => void
-  onRemove: (id: string) => void
+  onRemove: (player: Player) => void
 }
 
 export function PlayerList({
@@ -64,7 +64,7 @@ export function PlayerList({
             </button>
             <button
               type="button"
-              onClick={() => onRemove(player.id)}
+              onClick={() => onRemove(player)}
               className="flex size-9 items-center justify-center rounded-lg border border-red-200 text-red-700 transition hover:bg-red-50 sm:size-auto sm:px-3 sm:py-1.5 sm:text-sm sm:font-medium"
               aria-label={`Excluir ${player.nome}`}
             >

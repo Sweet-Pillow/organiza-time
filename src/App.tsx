@@ -17,6 +17,7 @@ export default function App() {
   const [editing, setEditing] = useState<Player | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
   const [modalOpen, setModalOpen] = useState(false)
+  const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null)
 
   const filteredPlayers = useMemo(
     () => filterPlayers(players, filters),
@@ -29,6 +30,10 @@ export default function App() {
   const closeModal = useCallback(() => {
     setModalOpen(false)
     setEditing(null)
+  }, [])
+
+  const closeDeleteModal = useCallback(() => {
+    setPlayerToDelete(null)
   }, [])
 
   function openCreate() {
@@ -50,9 +55,15 @@ export default function App() {
     closeModal()
   }
 
-  function handleRemove(id: string) {
-    if (editing?.id === id) closeModal()
-    removePlayer(id)
+  function requestRemove(player: Player) {
+    setPlayerToDelete(player)
+  }
+
+  function confirmRemove() {
+    if (!playerToDelete) return
+    if (editing?.id === playerToDelete.id) closeModal()
+    removePlayer(playerToDelete.id)
+    setPlayerToDelete(null)
   }
 
   return (
@@ -128,7 +139,7 @@ export default function App() {
                 players={filteredPlayers}
                 totalCount={players.length}
                 onEdit={openEdit}
-                onRemove={handleRemove}
+                onRemove={requestRemove}
               />
             </section>
           </div>
@@ -148,6 +159,36 @@ export default function App() {
           onSubmit={handleSubmit}
           onCancel={closeModal}
         />
+      </Modal>
+
+      <Modal
+        open={Boolean(playerToDelete)}
+        title="Excluir jogador"
+        onClose={closeDeleteModal}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-stone-600">
+            Tem certeza que deseja excluir{' '}
+            <strong className="text-stone-900">{playerToDelete?.nome}</strong>? Essa
+            ação não pode ser desfeita.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={confirmRemove}
+              className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 sm:flex-none"
+            >
+              Excluir
+            </button>
+            <button
+              type="button"
+              onClick={closeDeleteModal}
+              className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )
