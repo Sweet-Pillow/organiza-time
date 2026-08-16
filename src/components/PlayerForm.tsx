@@ -39,7 +39,7 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
       <label className="flex flex-col gap-1.5 text-sm">
         <span className="font-medium text-stone-700">Nome</span>
         <input
@@ -51,13 +51,13 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
         />
       </label>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-sm">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="font-medium text-stone-700">Sexo</span>
           <select
             value={form.sexo}
             onChange={(e) => setForm((f) => ({ ...f, sexo: e.target.value as Sexo }))}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2"
+            className="min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2 sm:px-3"
           >
             {(Object.keys(SEXO_LABELS) as Sexo[]).map((sexo) => (
               <option key={sexo} value={sexo}>
@@ -67,14 +67,14 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-stone-700">Posição preferencial</span>
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
+          <span className="font-medium text-stone-700">Posição</span>
           <select
             value={form.posicao}
             onChange={(e) =>
               setForm((f) => ({ ...f, posicao: e.target.value as Posicao }))
             }
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2"
+            className="min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2 sm:px-3"
           >
             {(Object.keys(POSICAO_LABELS) as Posicao[]).map((posicao) => (
               <option key={posicao} value={posicao}>
@@ -96,7 +96,7 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
       <div className="flex flex-wrap gap-2">
         <button
           type="submit"
-          className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+          className="flex-1 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 sm:flex-none sm:py-2"
         >
           {editing ? 'Salvar alterações' : 'Cadastrar jogador'}
         </button>

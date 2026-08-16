@@ -15,6 +15,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('jogadores')
   const [editing, setEditing] = useState<Player | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
+  const [showForm, setShowForm] = useState(false)
 
   const filteredPlayers = useMemo(
     () => filterPlayers(players, filters),
@@ -28,9 +29,11 @@ export default function App() {
     if (editing) {
       updatePlayer(editing.id, input)
       setEditing(null)
+      setShowForm(false)
       return
     }
     addPlayer(input)
+    setShowForm(false)
   }
 
   function handleRemove(id: string) {
@@ -38,8 +41,14 @@ export default function App() {
     removePlayer(id)
   }
 
+  function handleEdit(player: Player) {
+    setEditing(player)
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
-    <div className="min-h-svh bg-[radial-gradient(ellipse_at_top,_#e8f5ef_0%,_#f7f3ea_45%,_#efe8dc_100%)] text-stone-800">
+    <div className="min-h-svh bg-[radial-gradient(ellipse_at_top,#e8f5ef_0%,#f7f3ea_45%,#efe8dc_100%)] text-stone-800">
       <div className="court-lines pointer-events-none fixed inset-0 opacity-[0.07]" aria-hidden />
 
       <header className="relative border-b border-stone-900/10">
@@ -53,8 +62,8 @@ export default function App() {
         </div>
       </header>
 
-      <nav className="relative border-b border-stone-900/10 bg-white/40 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl gap-1 px-4 sm:px-6">
+      <nav className="sticky top-0 z-20 border-b border-stone-900/10 bg-white/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl px-2 sm:gap-1 sm:px-6">
           {(
             [
               { id: 'jogadores', label: 'Jogadores' },
@@ -67,7 +76,7 @@ export default function App() {
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
-                className={`relative px-4 py-3 text-sm font-semibold transition ${
+                className={`relative flex-1 px-4 py-3 text-sm font-semibold transition sm:flex-none ${
                   active
                     ? 'text-teal-900'
                     : 'text-stone-500 hover:text-stone-800'
@@ -83,9 +92,9 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+      <main className="relative mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
         {tab === 'jogadores' ? (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4 sm:gap-6">
             <p className="text-sm text-stone-600">
               <strong>{players.length}</strong> jogador
               {players.length !== 1 ? 'es' : ''} · {mulheres} mulher
@@ -93,23 +102,52 @@ export default function App() {
               {homens !== 1 ? 'homens' : 'homem'}
             </p>
 
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_1fr]">
-              <section className="rounded-xl border border-stone-200 bg-white/90 p-4 shadow-sm sm:p-5">
-                <h2 className="mb-4 font-display text-xl font-semibold text-stone-900">
-                  {editing ? 'Editar jogador' : 'Novo jogador'}
-                </h2>
-                <PlayerForm
-                  key={editing?.id ?? 'new'}
-                  initial={editing}
-                  onSubmit={handleSubmit}
-                  onCancel={() => setEditing(null)}
-                />
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-8">
+              <section className="rounded-xl border border-stone-200 bg-white/90 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (showForm && editing) setEditing(null)
+                    setShowForm((current) => !current)
+                  }}
+                  className="flex w-full items-center justify-between p-3 text-left lg:pointer-events-none lg:p-5 lg:pb-0"
+                >
+                  <h2 className="font-display text-lg font-semibold text-stone-900 sm:text-xl">
+                    {editing ? 'Editar jogador' : 'Novo jogador'}
+                  </h2>
+                  <span className="text-xl text-teal-800 lg:hidden" aria-hidden>
+                    {showForm ? '−' : '+'}
+                  </span>
+                </button>
+                <div className={`${showForm ? 'block' : 'hidden'} px-3 pb-4 lg:block lg:p-5`}>
+                  <PlayerForm
+                    key={editing?.id ?? 'new'}
+                    initial={editing}
+                    onSubmit={handleSubmit}
+                    onCancel={() => {
+                      setEditing(null)
+                      setShowForm(false)
+                    }}
+                  />
+                </div>
               </section>
 
-              <section className="flex flex-col gap-3">
-                <h2 className="font-display text-xl font-semibold text-stone-900">
-                  Elenco
-                </h2>
+              <section className="flex min-w-0 flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-xl font-semibold text-stone-900">
+                    Elenco
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(null)
+                      setShowForm(true)
+                    }}
+                    className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white lg:hidden"
+                  >
+                    + Jogador
+                  </button>
+                </div>
                 <PlayerFilters
                   value={filters}
                   onChange={setFilters}
@@ -119,7 +157,7 @@ export default function App() {
                 <PlayerList
                   players={filteredPlayers}
                   totalCount={players.length}
-                  onEdit={setEditing}
+                  onEdit={handleEdit}
                   onRemove={handleRemove}
                 />
               </section>

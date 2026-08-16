@@ -2,7 +2,6 @@ import type { DrawResult } from '../lib/drawTeams'
 import { teamStats } from '../lib/drawTeams'
 import type { Player } from '../types/player'
 import { POSICAO_LABELS } from '../types/player'
-import { StarRating } from './StarRating'
 
 type TeamResultProps = {
   result: DrawResult
@@ -18,33 +17,37 @@ export function TeamResult({ result }: TeamResultProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="flex flex-col gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
         {result.teams.map((team, index) => {
           const stats = teamStats(team)
           return (
             <section
               key={index}
-              className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
+              className="min-w-0 rounded-xl border border-stone-200 bg-white p-2.5 shadow-sm sm:p-4"
             >
-              <header className="mb-3 flex items-baseline justify-between gap-2 border-b border-stone-100 pb-3">
-                <h3 className="font-display text-xl font-semibold text-stone-900">
+              <header className="mb-2 border-b border-stone-100 pb-2 sm:mb-3 sm:flex sm:items-baseline sm:justify-between sm:gap-2 sm:pb-3">
+                <h3 className="font-display text-base font-semibold text-stone-900 sm:text-xl">
                   Time {index + 1}
                 </h3>
-                <p className="text-sm text-stone-500">
+                <p className="whitespace-nowrap text-[11px] text-stone-500 sm:text-sm">
                   {stats.stars} ★ · {stats.mulheres}♀ {stats.homens}♂
                 </p>
               </header>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col divide-y divide-stone-100">
                 {team.map((player: Player) => (
-                  <li key={player.id} className="flex items-center justify-between gap-2">
+                  <li key={player.id} className="flex items-center justify-between gap-1 py-1.5">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-stone-800">{player.nome}</p>
-                      <p className="text-xs text-stone-500">
+                      <p className="truncate text-sm font-medium text-stone-800 sm:text-base">
+                        {player.nome}
+                      </p>
+                      <p className="hidden text-xs text-stone-500 sm:block">
                         {POSICAO_LABELS[player.posicao]}
                       </p>
                     </div>
-                    <StarRating value={player.estrelas} readOnly size="sm" />
+                    <span className="shrink-0 text-xs font-semibold text-amber-600 sm:text-sm">
+                      {player.estrelas}★
+                    </span>
                   </li>
                 ))}
               </ul>

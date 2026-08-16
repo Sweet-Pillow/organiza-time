@@ -36,31 +36,40 @@ export function PlayerList({
       {players.map((player) => (
         <li
           key={player.id}
-          className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+          className="flex items-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3"
         >
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-stone-900">{player.nome}</p>
-            <p className="mt-0.5 text-sm text-stone-500">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate font-semibold text-stone-900">{player.nome}</p>
+              <span className="shrink-0 text-xs font-semibold text-amber-600">
+                {player.estrelas}★
+              </span>
+            </div>
+            <p className="truncate text-xs text-stone-500 sm:text-sm">
               {SEXO_LABELS[player.sexo]} · {POSICAO_LABELS[player.posicao]}
             </p>
-            <div className="mt-1">
+            <div className="mt-1 hidden sm:block">
               <StarRating value={player.estrelas} readOnly size="sm" />
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 gap-1">
             <button
               type="button"
               onClick={() => onEdit(player)}
-              className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+              className="flex size-9 items-center justify-center rounded-lg border border-stone-300 text-stone-700 transition hover:bg-stone-50 sm:size-auto sm:px-3 sm:py-1.5 sm:text-sm sm:font-medium"
+              aria-label={`Editar ${player.nome}`}
             >
-              Editar
+              <span aria-hidden className="sm:hidden">✎</span>
+              <span className="hidden sm:inline">Editar</span>
             </button>
             <button
               type="button"
               onClick={() => onRemove(player.id)}
-              className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50"
+              className="flex size-9 items-center justify-center rounded-lg border border-red-200 text-red-700 transition hover:bg-red-50 sm:size-auto sm:px-3 sm:py-1.5 sm:text-sm sm:font-medium"
+              aria-label={`Excluir ${player.nome}`}
             >
-              Excluir
+              <span aria-hidden className="sm:hidden">×</span>
+              <span className="hidden sm:inline">Excluir</span>
             </button>
           </div>
         </li>

@@ -13,7 +13,7 @@ type DrawSetupProps = {
 
 export function DrawSetup({ players }: DrawSetupProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
-  const [teamSize, setTeamSize] = useState(6)
+  const [teamSize, setTeamSize] = useState(4)
   const [result, setResult] = useState<DrawResult | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
 
@@ -73,10 +73,10 @@ export function DrawSetup({ players }: DrawSetupProps) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <section className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5 sm:gap-8">
+      <section className="flex flex-col gap-3 sm:gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-2xl font-semibold text-stone-900">
+          <h2 className="font-display text-xl font-semibold text-stone-900 sm:text-2xl">
             Quem vai jogar
           </h2>
           <button
@@ -101,13 +101,13 @@ export function DrawSetup({ players }: DrawSetupProps) {
             Nenhum jogador encontrado com esses filtros.
           </p>
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {visiblePlayers.map((player) => {
               const checked = selectedIds.has(player.id)
               return (
                 <li key={player.id}>
                   <label
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
+                    className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border px-2 py-2 transition sm:gap-3 sm:rounded-xl sm:px-3 sm:py-2.5 ${
                       checked
                         ? 'border-teal-600 bg-teal-50'
                         : 'border-stone-200 bg-white hover:border-stone-300'
@@ -117,15 +117,17 @@ export function DrawSetup({ players }: DrawSetupProps) {
                       type="checkbox"
                       checked={checked}
                       onChange={() => togglePlayer(player.id)}
-                      className="size-4 accent-teal-700"
+                      className="size-4 shrink-0 accent-teal-700"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-stone-900">
+                      <span className="block truncate text-sm font-medium text-stone-900 sm:text-base">
                         {player.nome}
                       </span>
                       <span className="text-xs text-stone-500">
-                        {player.estrelas}★ · {player.sexo === 'feminino' ? 'F' : 'M'} ·{' '}
-                        {POSICAO_LABELS[player.posicao]}
+                        {player.estrelas}★ · {player.sexo === 'feminino' ? 'F' : 'M'}
+                        <span className="hidden sm:inline">
+                          {' '}· {POSICAO_LABELS[player.posicao]}
+                        </span>
                       </span>
                     </span>
                   </label>
@@ -149,9 +151,9 @@ export function DrawSetup({ players }: DrawSetupProps) {
         ) : null}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-stone-200 bg-white/80 p-4 sm:p-5">
-        <label className="flex max-w-xs flex-col gap-1.5 text-sm">
-          <span className="font-medium text-stone-700">Pessoas por time</span>
+      <section className="sticky bottom-2 z-10 grid grid-cols-[6.5rem_1fr] items-end gap-3 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-lg backdrop-blur-md sm:static sm:flex sm:flex-col sm:items-stretch sm:gap-4 sm:p-5 sm:shadow-none">
+        <label className="flex flex-col gap-1 text-xs sm:max-w-xs sm:gap-1.5 sm:text-sm">
+          <span className="font-medium text-stone-700">Por time</span>
           <input
             type="number"
             min={1}
@@ -161,11 +163,11 @@ export function DrawSetup({ players }: DrawSetupProps) {
               setResult(null)
               setTeamSize(Math.max(1, Number(e.target.value) || 1))
             }}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2"
+            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2"
           />
         </label>
 
-        <p className="text-sm text-stone-600">
+        <p className="col-span-2 order-3 text-xs text-stone-600 sm:order-0 sm:text-sm">
           <strong>{selectedPlayers.length}</strong> participante
           {selectedPlayers.length !== 1 ? 's' : ''} →{' '}
           {teamCount > 0 ? (
@@ -179,12 +181,12 @@ export function DrawSetup({ players }: DrawSetupProps) {
           )}
         </p>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex">
           <button
             type="button"
             disabled={teamCount < 1}
             onClick={handleDraw}
-            className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-stone-300"
+            className="w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
           >
             {result ? 'Sortear de novo' : 'Sortear times'}
           </button>
@@ -193,7 +195,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
 
       {result ? (
         <section className="flex flex-col gap-3">
-          <h2 className="font-display text-2xl font-semibold text-stone-900">
+          <h2 className="font-display text-xl font-semibold text-stone-900 sm:text-2xl">
             Resultado
           </h2>
           <TeamResult result={result} />

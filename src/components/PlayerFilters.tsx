@@ -26,82 +26,94 @@ export function PlayerFilters({
     value.estrelas !== 'todos'
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white/90 p-3 sm:p-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="flex flex-col gap-1 text-sm sm:col-span-2 lg:col-span-1">
-          <span className="font-medium text-stone-700">Buscar nome</span>
+    <div className="flex flex-col gap-2 rounded-xl border border-stone-200 bg-white/90 p-2.5 sm:gap-3 sm:p-4">
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="sr-only">Buscar nome</span>
+        <div className="relative">
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-stone-400">
+            ⌕
+          </span>
           <input
             type="search"
             value={value.nome}
             onChange={(e) => onChange({ ...value, nome: e.target.value })}
-            placeholder="Digite o nome…"
-            className={fieldClass}
+            placeholder="Buscar jogador pelo nome…"
+            className={`${fieldClass} w-full pl-9`}
           />
-        </label>
+        </div>
+      </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-stone-700">Gênero</span>
-          <select
-            value={value.sexo}
-            onChange={(e) =>
-              onChange({ ...value, sexo: e.target.value as PlayerFiltersState['sexo'] })
-            }
-            className={fieldClass}
-          >
-            <option value="todos">Todos</option>
-            {(Object.keys(SEXO_LABELS) as Sexo[]).map((sexo) => (
-              <option key={sexo} value={sexo}>
-                {SEXO_LABELS[sexo]}
-              </option>
-            ))}
-          </select>
-        </label>
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-1 py-1.5 text-sm font-medium text-stone-600 sm:hidden">
+          <span>Filtros avançados</span>
+          <span className="transition group-open:rotate-180">⌄</span>
+        </summary>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-stone-700">Posição</span>
-          <select
-            value={value.posicao}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                posicao: e.target.value as PlayerFiltersState['posicao'],
-              })
-            }
-            className={fieldClass}
-          >
-            <option value="todos">Todas</option>
-            {(Object.keys(POSICAO_LABELS) as Posicao[]).map((posicao) => (
-              <option key={posicao} value={posicao}>
-                {POSICAO_LABELS[posicao]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="hidden grid-cols-3 gap-2 pt-2 group-open:grid sm:grid sm:pt-0">
+          <label className="flex min-w-0 flex-col gap-1 text-xs sm:text-sm">
+            <span className="font-medium text-stone-700">Gênero</span>
+            <select
+              value={value.sexo}
+              onChange={(e) =>
+                onChange({ ...value, sexo: e.target.value as PlayerFiltersState['sexo'] })
+              }
+              className={`${fieldClass} min-w-0 px-2 sm:px-3`}
+            >
+              <option value="todos">Todos</option>
+              {(Object.keys(SEXO_LABELS) as Sexo[]).map((sexo) => (
+                <option key={sexo} value={sexo}>
+                  {SEXO_LABELS[sexo]}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-stone-700">Estrelas</span>
-          <select
-            value={value.estrelas}
-            onChange={(e) => {
-              const raw = e.target.value
-              onChange({
-                ...value,
-                estrelas: raw === 'todos' ? 'todos' : (Number(raw) as Estrelas),
-              })
-            }}
-            className={fieldClass}
-          >
-            <option value="todos">Todas</option>
-            {([1, 2, 3, 4, 5] as const).map((star) => (
-              <option key={star} value={star}>
-                {star} ★
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+          <label className="flex min-w-0 flex-col gap-1 text-xs sm:text-sm">
+            <span className="font-medium text-stone-700">Posição</span>
+            <select
+              value={value.posicao}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  posicao: e.target.value as PlayerFiltersState['posicao'],
+                })
+              }
+              className={`${fieldClass} min-w-0 px-2 sm:px-3`}
+            >
+              <option value="todos">Todas</option>
+              {(Object.keys(POSICAO_LABELS) as Posicao[]).map((posicao) => (
+                <option key={posicao} value={posicao}>
+                  {POSICAO_LABELS[posicao]}
+                </option>
+              ))}
+            </select>
+          </label>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-stone-500">
+          <label className="flex min-w-0 flex-col gap-1 text-xs sm:text-sm">
+            <span className="font-medium text-stone-700">Estrelas</span>
+            <select
+              value={value.estrelas}
+              onChange={(e) => {
+                const raw = e.target.value
+                onChange({
+                  ...value,
+                  estrelas: raw === 'todos' ? 'todos' : (Number(raw) as Estrelas),
+                })
+              }}
+              className={`${fieldClass} min-w-0 px-2 sm:px-3`}
+            >
+              <option value="todos">Todas</option>
+              {([1, 2, 3, 4, 5] as const).map((star) => (
+                <option key={star} value={star}>
+                  {star} ★
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-stone-500 sm:text-sm">
         <p>
           Mostrando <strong className="text-stone-700">{resultCount}</strong> de{' '}
           <strong className="text-stone-700">{totalCount}</strong>
