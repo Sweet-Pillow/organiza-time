@@ -47,7 +47,7 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
           value={form.nome}
           onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
           placeholder="Nome do jogador"
-          className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2"
+          className="focus:ring-brand/30 rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
         />
       </label>
 
@@ -57,7 +57,7 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
           <select
             value={form.sexo}
             onChange={(e) => setForm((f) => ({ ...f, sexo: e.target.value as Sexo }))}
-            className="min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2 sm:px-3"
+            className="focus:ring-brand/30 min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-stone-900 outline-none focus:ring-2 sm:px-3"
           >
             {(Object.keys(SEXO_LABELS) as Sexo[]).map((sexo) => (
               <option key={sexo} value={sexo}>
@@ -74,7 +74,7 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
             onChange={(e) =>
               setForm((f) => ({ ...f, posicao: e.target.value as Posicao }))
             }
-            className="min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2 sm:px-3"
+            className="focus:ring-brand/30 min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-stone-900 outline-none focus:ring-2 sm:px-3"
           >
             {(Object.keys(POSICAO_LABELS) as Posicao[]).map((posicao) => (
               <option key={posicao} value={posicao}>
@@ -96,7 +96,7 @@ export function PlayerForm({ initial, onSubmit, onCancel }: PlayerFormProps) {
       <div className="flex flex-wrap gap-2 pt-1">
         <button
           type="submit"
-          className="flex-1 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 sm:py-2"
+          className="bg-brand hover:bg-brand-hover flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition sm:py-2"
         >
           {editing ? 'Salvar alterações' : 'Cadastrar jogador'}
         </button>

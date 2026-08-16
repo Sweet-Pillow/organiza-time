@@ -13,7 +13,7 @@ type PlayerFiltersProps = {
 }
 
 const fieldClass =
-  'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none ring-teal-600/30 focus:ring-2'
+  'focus:ring-brand/30 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:ring-2'
 
 export function PlayerFilters({
   value,
@@ -130,7 +130,7 @@ export function PlayerFilters({
           <button
             type="button"
             onClick={() => onChange(EMPTY_FILTERS)}
-            className="font-medium text-teal-800 underline-offset-2 hover:underline"
+            className="text-brand font-medium underline-offset-2 hover:underline"
           >
             Limpar filtros
           </button>

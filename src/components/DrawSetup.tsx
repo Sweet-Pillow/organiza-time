@@ -86,7 +86,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
             type="button"
             onClick={toggleVisible}
             disabled={visiblePlayers.length === 0}
-            className="text-sm font-medium text-teal-800 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-stone-400 disabled:no-underline"
+            className="text-brand text-sm font-medium underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-stone-400 disabled:no-underline"
           >
             {allVisibleSelected ? 'Desmarcar visíveis' : 'Marcar visíveis'}
           </button>
@@ -114,7 +114,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
                   <label
                     className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border px-2 py-2 transition sm:gap-3 sm:rounded-xl sm:px-3 sm:py-2.5 ${
                       checked
-                        ? 'border-teal-600 bg-teal-50'
+                      ? 'border-brand bg-accent-soft'
                         : 'border-stone-200 bg-white hover:border-stone-300'
                     }`}
                   >
@@ -122,7 +122,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
                       type="checkbox"
                       checked={checked}
                       onChange={() => togglePlayer(player.id)}
-                      className="size-4 shrink-0 accent-teal-700"
+                      className="accent-brand size-4 shrink-0"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-stone-900 sm:text-base">
@@ -168,7 +168,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
               setResult(null)
               setTeamSize(Math.max(1, Number(e.target.value) || 1))
             }}
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none ring-teal-600/30 focus:ring-2"
+            className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
           />
         </label>
 
@@ -191,7 +191,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
             type="button"
             disabled={teamCount < 1}
             onClick={handleDraw}
-            className="w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
+            className="bg-brand hover:bg-brand-hover w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
           >
             {result ? 'Sortear de novo' : 'Sortear times'}
           </button>

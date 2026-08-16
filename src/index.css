@@ -3,6 +3,10 @@
 @theme {
   --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #00293d;
+  --color-brand-hover: #003e59;
+  --color-accent: #a7e60f;
+  --color-accent-soft: #f1fbd8;
 }
 
 @layer base {
@@ -28,6 +32,6 @@
     background-size: min(100%, 64rem) 100%, 100% min(100%, 36rem);
     background-position: center;
     background-repeat: no-repeat;
-    color: #0f766e;
+    color: #00293d;
   }
 }

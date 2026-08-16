@@ -56,13 +56,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-svh bg-[radial-gradient(ellipse_at_top,#e8f5ef_0%,#f7f3ea_45%,#efe8dc_100%)] text-stone-800">
+    <div className="min-h-svh bg-[radial-gradient(ellipse_at_top,#f1fbd8_0%,#f7f8f3_45%,#eef2f4_100%)] text-stone-800">
       <div className="court-lines pointer-events-none fixed inset-0 opacity-[0.07]" aria-hidden />
 
       <header className="relative border-b border-stone-900/10">
         <div className="mx-auto flex max-w-5xl items-baseline gap-3 px-4 py-4 sm:px-6">
           <h1 className="font-display text-2xl font-semibold tracking-tight text-stone-900">
-            organiza-time
+            Vôlei dos Forrozeiros
           </h1>
           <p className="hidden text-sm text-stone-500 sm:block">
             Times de vôlei equilibrados
@@ -86,13 +86,13 @@ export default function App() {
                 onClick={() => setTab(item.id)}
                 className={`relative flex-1 px-4 py-3 text-sm font-semibold transition sm:flex-none ${
                   active
-                    ? 'text-teal-900'
+                    ? 'text-brand'
                     : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
                 {item.label}
                 {active ? (
-                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-teal-700" />
+                  <span className="bg-accent absolute inset-x-2 bottom-0 h-0.5 rounded-full" />
                 ) : null}
               </button>
             )
@@ -111,7 +111,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={openCreate}
-                  className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+                className="bg-brand hover:bg-brand-hover rounded-lg px-3 py-2 text-sm font-semibold text-white transition"
                 >
                   + Jogador
                 </button>
