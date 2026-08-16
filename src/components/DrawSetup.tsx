@@ -48,6 +48,7 @@ export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
   const [history, setHistory] = useState<DrawHistoryEntry[]>(() => loadDrawHistory())
   const [showRules, setShowRules] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showEventDetails, setShowEventDetails] = useState(false)
 
   const teamSize = teamSizeInput === '' ? 0 : Number(teamSizeInput)
 
@@ -153,6 +154,19 @@ export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
     setResult(restored)
     setShowHistory(false)
   }
+
+  const eventSummary = [
+    eventDate
+      ? (() => {
+          const [y, m, d] = eventDate.split('-')
+          return d && m && y ? `${d}/${m}/${y}` : eventDate
+        })()
+      : null,
+    eventTime || null,
+    eventLocation.trim() || null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   if (players.length === 0) {
     return (
@@ -340,95 +354,226 @@ export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
         </div>
       </section>
 
-      <section className="sticky bottom-2 z-10 flex flex-col gap-3 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-lg backdrop-blur-md sm:static sm:gap-4 sm:p-5 sm:shadow-none">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          <label className="flex flex-col gap-1 text-xs sm:gap-1.5 sm:text-sm">
-            <span className="font-medium text-stone-700">Por time</span>
-            <input
-              type="number"
-              min={0}
-              max={Math.max(selectedPlayers.length, 1)}
-              value={teamSizeInput}
-              onChange={(e) => handleTeamSizeChange(e.target.value)}
-              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs sm:gap-1.5 sm:text-sm">
-            <span className="font-medium text-stone-700">Data</span>
-            <input
-              type="date"
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs sm:gap-1.5 sm:text-sm">
-            <span className="font-medium text-stone-700">Horário</span>
-            <input
-              type="time"
-              value={eventTime}
-              onChange={(e) => setEventTime(e.target.value)}
-              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
-            />
-          </label>
-          <label className="col-span-2 flex flex-col gap-1 text-xs sm:col-span-1 sm:gap-1.5 sm:text-sm">
-            <span className="font-medium text-stone-700">Local</span>
-            <input
-              type="text"
-              value={eventLocation}
-              onChange={(e) => setEventLocation(e.target.value)}
-              placeholder="Ex.: Quadra do clube"
-              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
-            />
-          </label>
+      <section className="sticky bottom-2 z-10 rounded-xl border border-stone-200 bg-white/95 shadow-lg backdrop-blur-md sm:static sm:shadow-none">
+        {/* Mobile: barra compacta */}
+        <div className="flex flex-col gap-1.5 px-2.5 py-2 sm:hidden">
+          <div className="flex items-center gap-2">
+            <div className="focus-within:ring-brand/30 flex shrink-0 items-center rounded-lg border border-stone-300 bg-white focus-within:ring-2">
+              <input
+                type="number"
+                min={0}
+                max={Math.max(selectedPlayers.length, 1)}
+                value={teamSizeInput}
+                onChange={(e) => handleTeamSizeChange(e.target.value)}
+                aria-label="Jogadores por time"
+                className="w-11 bg-transparent py-1.5 pl-2 text-center text-sm font-semibold text-stone-900 outline-none"
+              />
+              <span className="pr-2 text-[11px] text-stone-500">/time</span>
+            </div>
+
+            <button
+              type="button"
+              disabled={!canDraw}
+              onClick={handleDraw}
+              className="bg-brand hover:bg-brand-hover flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300"
+            >
+              {result ? 'Sortear de novo' : 'Sortear times'}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-stone-600">
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={balanceByGender}
+                onChange={(e) => {
+                  setResult(null)
+                  setBalanceByGender(e.target.checked)
+                }}
+                className="accent-brand size-3.5"
+              />
+              <span>Balancear gênero</span>
+            </label>
+
+            <span className="text-stone-300" aria-hidden>
+              ·
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setShowEventDetails((value) => !value)}
+              className="max-w-full truncate font-medium text-stone-600 underline-offset-2 hover:underline"
+            >
+              {eventSummary || 'Data, horário e local'}
+            </button>
+
+            {canDraw ? (
+              <span className="ml-auto text-stone-500">
+                {teamCount > 0 ? `${teamCount}×${teamSize}` : null}
+                {teamCount > 0 && leftoverCount > 0 ? ' + ' : null}
+                {leftoverCount > 0 ? `1 incompleto (${leftoverCount})` : null}
+              </span>
+            ) : (
+              <span className="ml-auto text-stone-400">selecione jogadores</span>
+            )}
+          </div>
+
+          {showEventDetails ? (
+            <div className="grid grid-cols-2 gap-2 rounded-lg border border-stone-200 bg-stone-50/80 p-2">
+              <label className="flex flex-col gap-0.5 text-[11px]">
+                <span className="font-medium text-stone-600">Data</span>
+                <input
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="focus:ring-brand/30 w-full rounded-md border border-stone-300 bg-white px-2 py-1 text-xs text-stone-900 outline-none focus:ring-2"
+                />
+              </label>
+              <label className="flex flex-col gap-0.5 text-[11px]">
+                <span className="font-medium text-stone-600">Horário</span>
+                <input
+                  type="time"
+                  value={eventTime}
+                  onChange={(e) => setEventTime(e.target.value)}
+                  className="focus:ring-brand/30 w-full rounded-md border border-stone-300 bg-white px-2 py-1 text-xs text-stone-900 outline-none focus:ring-2"
+                />
+              </label>
+              <label className="col-span-2 flex flex-col gap-0.5 text-[11px]">
+                <span className="font-medium text-stone-600">Local</span>
+                <input
+                  type="text"
+                  value={eventLocation}
+                  onChange={(e) => setEventLocation(e.target.value)}
+                  placeholder="Ex.: Quadra"
+                  className="focus:ring-brand/30 w-full rounded-md border border-stone-300 bg-white px-2 py-1 text-xs text-stone-900 outline-none focus:ring-2"
+                />
+              </label>
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex">
-          <button
-            type="button"
-            disabled={!canDraw}
-            onClick={handleDraw}
-            className="bg-brand hover:bg-brand-hover w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
-          >
-            {result ? 'Sortear de novo' : 'Sortear times'}
-          </button>
+        {/* Desktop: layout anterior, mais espaçado */}
+        <div className="hidden flex-col gap-4 p-5 sm:flex">
+          <div className="flex flex-col items-stretch gap-3">
+            <label className="flex max-w-xs flex-col gap-1.5 text-sm">
+              <span className="font-medium text-stone-700">Por time</span>
+              <input
+                type="number"
+                min={0}
+                max={Math.max(selectedPlayers.length, 1)}
+                value={teamSizeInput}
+                onChange={(e) => handleTeamSizeChange(e.target.value)}
+                className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
+              />
+            </label>
+
+            <div className="flex">
+              <button
+                type="button"
+                disabled={!canDraw}
+                onClick={handleDraw}
+                className="bg-brand hover:bg-brand-hover rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300"
+              >
+                {result ? 'Sortear de novo' : 'Sortear times'}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-stone-200 bg-stone-50/80">
+            <button
+              type="button"
+              onClick={() => setShowEventDetails((value) => !value)}
+              className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left"
+            >
+              <span className="min-w-0">
+                <span className="block text-xs font-medium text-stone-700">
+                  Data, horário e local
+                </span>
+                {!showEventDetails && eventSummary ? (
+                  <span className="mt-0.5 block truncate text-[11px] text-stone-500">
+                    {eventSummary}
+                  </span>
+                ) : null}
+                {!showEventDetails && !eventSummary ? (
+                  <span className="mt-0.5 block text-[11px] text-stone-400">
+                    Opcional para a imagem do WhatsApp
+                  </span>
+                ) : null}
+              </span>
+              <span className="shrink-0 text-stone-400">
+                {showEventDetails ? '−' : '+'}
+              </span>
+            </button>
+            {showEventDetails ? (
+              <div className="grid grid-cols-3 gap-2 border-t border-stone-200 p-2.5">
+                <label className="flex flex-col gap-0.5 text-[11px]">
+                  <span className="font-medium text-stone-600">Data</span>
+                  <input
+                    type="date"
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    className="focus:ring-brand/30 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs text-stone-900 outline-none focus:ring-2"
+                  />
+                </label>
+                <label className="flex flex-col gap-0.5 text-[11px]">
+                  <span className="font-medium text-stone-600">Horário</span>
+                  <input
+                    type="time"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
+                    className="focus:ring-brand/30 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs text-stone-900 outline-none focus:ring-2"
+                  />
+                </label>
+                <label className="flex flex-col gap-0.5 text-[11px]">
+                  <span className="font-medium text-stone-600">Local</span>
+                  <input
+                    type="text"
+                    value={eventLocation}
+                    onChange={(e) => setEventLocation(e.target.value)}
+                    placeholder="Ex.: Quadra"
+                    className="focus:ring-brand/30 w-full rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs text-stone-900 outline-none focus:ring-2"
+                  />
+                </label>
+              </div>
+            ) : null}
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
+            <input
+              type="checkbox"
+              checked={balanceByGender}
+              onChange={(e) => {
+                setResult(null)
+                setBalanceByGender(e.target.checked)
+              }}
+              className="accent-brand size-4"
+            />
+            <span>Balancear por gênero</span>
+          </label>
+
+          <p className="text-sm text-stone-600">
+            <strong>{selectedPlayers.length}</strong> participante
+            {selectedPlayers.length !== 1 ? 's' : ''} →{' '}
+            {canDraw ? (
+              <>
+                {teamCount > 0 ? (
+                  <>
+                    <strong>{teamCount}</strong> time{teamCount !== 1 ? 's' : ''}{' '}
+                    de <strong>{teamSize}</strong>
+                  </>
+                ) : null}
+                {leftoverCount > 0 ? (
+                  <>
+                    {teamCount > 0 ? ' + ' : null}
+                    <strong>1</strong> incompleto ({leftoverCount}/{teamSize})
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <span>selecione jogadores para sortear</span>
+            )}
+          </p>
         </div>
-
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
-          <input
-            type="checkbox"
-            checked={balanceByGender}
-            onChange={(e) => {
-              setResult(null)
-              setBalanceByGender(e.target.checked)
-            }}
-            className="accent-brand size-4"
-          />
-          <span>Balancear por gênero</span>
-        </label>
-
-        <p className="text-xs text-stone-600 sm:text-sm">
-          <strong>{selectedPlayers.length}</strong> participante
-          {selectedPlayers.length !== 1 ? 's' : ''} →{' '}
-          {canDraw ? (
-            <>
-              {teamCount > 0 ? (
-                <>
-                  <strong>{teamCount}</strong> time{teamCount !== 1 ? 's' : ''} de{' '}
-                  <strong>{teamSize}</strong>
-                </>
-              ) : null}
-              {leftoverCount > 0 ? (
-                <>
-                  {teamCount > 0 ? ' + ' : null}
-                  <strong>1</strong> incompleto ({leftoverCount}/{teamSize})
-                </>
-              ) : null}
-            </>
-          ) : (
-            <span>selecione jogadores para sortear</span>
-          )}
-        </p>
       </section>
 
       {result ? (
