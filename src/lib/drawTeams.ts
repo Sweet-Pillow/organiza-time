@@ -89,7 +89,17 @@ function assignByLowestStars(
   return leftover
 }
 
-export function drawTeams(players: Player[], teamSize: number): DrawResult {
+export type DrawOptions = {
+  balanceByGender?: boolean
+}
+
+export function drawTeams(
+  players: Player[],
+  teamSize: number,
+  options: DrawOptions = {},
+): DrawResult {
+  const { balanceByGender = true } = options
+
   if (teamSize < 1 || players.length < teamSize) {
     return { teams: [], leftover: [...players] }
   }
@@ -100,6 +110,14 @@ export function drawTeams(players: Player[], teamSize: number): DrawResult {
   const leftover = shuffled.slice(teamCount * teamSize)
 
   const teams: Player[][] = Array.from({ length: teamCount }, () => [])
+
+  if (!balanceByGender) {
+    const extraLeftover = assignByLowestStars(participants, teams, teamSize)
+    return {
+      teams,
+      leftover: [...leftover, ...extraLeftover],
+    }
+  }
 
   const bySexo: Record<Sexo, Player[]> = {
     feminino: [],

@@ -14,6 +14,7 @@ type DrawSetupProps = {
 export function DrawSetup({ players }: DrawSetupProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [teamSize, setTeamSize] = useState(4)
+  const [balanceByGender, setBalanceByGender] = useState(true)
   const [result, setResult] = useState<DrawResult | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
 
@@ -64,7 +65,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
 
   function handleDraw() {
     if (teamCount < 1) return
-    setResult(drawTeams(selectedPlayers, teamSize))
+    setResult(drawTeams(selectedPlayers, teamSize, { balanceByGender }))
   }
 
   if (players.length === 0) {
@@ -156,23 +157,49 @@ export function DrawSetup({ players }: DrawSetupProps) {
         ) : null}
       </section>
 
-      <section className="sticky bottom-2 z-10 grid grid-cols-[6.5rem_1fr] items-end gap-3 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-lg backdrop-blur-md sm:static sm:flex sm:flex-col sm:items-stretch sm:gap-4 sm:p-5 sm:shadow-none">
-        <label className="flex flex-col gap-1 text-xs sm:max-w-xs sm:gap-1.5 sm:text-sm">
-          <span className="font-medium text-stone-700">Por time</span>
+      <section className="sticky bottom-2 z-10 flex flex-col gap-3 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-lg backdrop-blur-md sm:static sm:gap-4 sm:p-5 sm:shadow-none">
+        <div className="grid grid-cols-[6.5rem_1fr] items-end gap-3 sm:grid-cols-none sm:flex sm:flex-col sm:items-stretch">
+          <label className="flex flex-col gap-1 text-xs sm:max-w-xs sm:gap-1.5 sm:text-sm">
+            <span className="font-medium text-stone-700">Por time</span>
+            <input
+              type="number"
+              min={1}
+              max={Math.max(selectedPlayers.length, 1)}
+              value={teamSize}
+              onChange={(e) => {
+                setResult(null)
+                setTeamSize(Math.max(1, Number(e.target.value) || 1))
+              }}
+              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
+            />
+          </label>
+
+          <div className="flex">
+            <button
+              type="button"
+              disabled={teamCount < 1}
+              onClick={handleDraw}
+              className="bg-brand hover:bg-brand-hover w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
+            >
+              {result ? 'Sortear de novo' : 'Sortear times'}
+            </button>
+          </div>
+        </div>
+
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
           <input
-            type="number"
-            min={1}
-            max={Math.max(selectedPlayers.length, 1)}
-            value={teamSize}
+            type="checkbox"
+            checked={balanceByGender}
             onChange={(e) => {
               setResult(null)
-              setTeamSize(Math.max(1, Number(e.target.value) || 1))
+              setBalanceByGender(e.target.checked)
             }}
-            className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
+            className="accent-brand size-4"
           />
+          <span>Balancear por gênero</span>
         </label>
 
-        <p className="col-span-2 order-3 text-xs text-stone-600 sm:order-0 sm:text-sm">
+        <p className="text-xs text-stone-600 sm:text-sm">
           <strong>{selectedPlayers.length}</strong> participante
           {selectedPlayers.length !== 1 ? 's' : ''} →{' '}
           {teamCount > 0 ? (
@@ -185,17 +212,6 @@ export function DrawSetup({ players }: DrawSetupProps) {
             <span>selecione mais jogadores ou reduza o tamanho do time</span>
           )}
         </p>
-
-        <div className="flex">
-          <button
-            type="button"
-            disabled={teamCount < 1}
-            onClick={handleDraw}
-            className="bg-brand hover:bg-brand-hover w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
-          >
-            {result ? 'Sortear de novo' : 'Sortear times'}
-          </button>
-        </div>
       </section>
 
       {result ? (
