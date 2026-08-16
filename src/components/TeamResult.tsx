@@ -6,6 +6,7 @@ import {
 } from '../lib/drawBalance'
 import type { DrawResult } from '../lib/drawTeams'
 import { teamStats } from '../lib/drawTeams'
+import type { TeamsEventInfo } from '../lib/teamsImage'
 import type { Player } from '../types/player'
 import { POSICAO_LABELS } from '../types/player'
 import { GenderIcon } from './GenderIcon'
@@ -14,10 +15,11 @@ import { TeamsShare } from './TeamsShare'
 type TeamResultProps = {
   result: DrawResult
   teamSize: number
+  event: TeamsEventInfo
   onChange: (next: DrawResult) => void
 }
 
-export function TeamResult({ result, teamSize, onChange }: TeamResultProps) {
+export function TeamResult({ result, teamSize, event, onChange }: TeamResultProps) {
   const [pickedId, setPickedId] = useState<string | null>(null)
   const balance = useMemo(() => getDrawBalanceSummary(result), [result])
 
@@ -178,7 +180,7 @@ export function TeamResult({ result, teamSize, onChange }: TeamResultProps) {
           )
         })}
       </div>
-      <TeamsShare result={result} teamSize={teamSize} />
+      <TeamsShare result={result} teamSize={teamSize} event={event} />
     </div>
   )
 }

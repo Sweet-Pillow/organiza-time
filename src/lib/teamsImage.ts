@@ -55,17 +55,45 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   })
 }
 
+export type TeamsEventInfo = {
+  date: string
+  time: string
+  location: string
+}
+
+function formatDateLabel(isoDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate.trim())
+  if (!match) return isoDate.trim()
+  return `${match[3]}/${match[2]}/${match[1]}`
+}
+
+function eventDetailLines(event: TeamsEventInfo): string[] {
+  const lines: string[] = []
+  const dateLabel = event.date.trim() ? formatDateLabel(event.date) : ''
+  const timeLabel = event.time.trim()
+  if (dateLabel && timeLabel) lines.push(`${dateLabel} · ${timeLabel}`)
+  else if (dateLabel) lines.push(dateLabel)
+  else if (timeLabel) lines.push(timeLabel)
+
+  const location = event.location.trim()
+  if (location) lines.push(location)
+  return lines
+}
+
 export async function generateTeamsImage(
   result: DrawResult,
   teamSize: number,
+  event: TeamsEventInfo = { date: '', time: '', location: '' },
 ): Promise<Blob> {
   const logo = await loadImage(
     `${import.meta.env.BASE_URL}logo-volei-dos-forrozeiros.jpg`,
   )
+  const details = eventDetailLines(event)
   const maxPlayers = Math.max(...result.teams.map((team) => team.players.length), 1)
   const cardHeight = Math.max(250, 112 + maxPlayers * 52)
   const rows = Math.ceil(result.teams.length / COLUMNS)
-  const headerHeight = 310
+  const detailsBlock = details.length > 0 ? 18 + details.length * 34 : 0
+  const headerHeight = 310 + detailsBlock
   const footerHeight = 72
   const height = headerHeight + rows * cardHeight + (rows - 1) * GAP + footerHeight
 
@@ -91,6 +119,16 @@ export async function generateTeamsImage(
   context.textAlign = 'center'
   context.font = '700 34px system-ui, sans-serif'
   context.fillText('TIMES SORTEADOS', WIDTH / 2, 294)
+
+  details.forEach((line, index) => {
+    context.fillStyle = MUTED
+    context.font = `${index === 0 ? '600' : '500'} 24px system-ui, sans-serif`
+    context.fillText(
+      fitText(context, line, WIDTH - PADDING * 2),
+      WIDTH / 2,
+      334 + index * 34,
+    )
+  })
 
   const cardWidth = (WIDTH - PADDING * 2 - GAP) / COLUMNS
 

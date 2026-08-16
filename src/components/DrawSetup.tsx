@@ -7,6 +7,7 @@ import {
 } from '../lib/constraints'
 import { drawTeams, type DrawResult } from '../lib/drawTeams'
 import { filterPlayers } from '../lib/filterPlayers'
+import type { TeamsEventInfo } from '../lib/teamsImage'
 import {
   appendDrawHistory,
   loadDrawHistory,
@@ -30,6 +31,14 @@ type DrawSetupProps = {
 export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [teamSizeInput, setTeamSizeInput] = useState('4')
+  const [eventDate, setEventDate] = useState(() => {
+    const now = new Date()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${now.getFullYear()}-${month}-${day}`
+  })
+  const [eventTime, setEventTime] = useState('')
+  const [eventLocation, setEventLocation] = useState('')
   const [balanceByGender, setBalanceByGender] = useState(true)
   const [result, setResult] = useState<DrawResult | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
@@ -332,8 +341,8 @@ export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
       </section>
 
       <section className="sticky bottom-2 z-10 flex flex-col gap-3 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-lg backdrop-blur-md sm:static sm:gap-4 sm:p-5 sm:shadow-none">
-        <div className="grid grid-cols-[6.5rem_1fr] items-end gap-3 sm:grid-cols-none sm:flex sm:flex-col sm:items-stretch">
-          <label className="flex flex-col gap-1 text-xs sm:max-w-xs sm:gap-1.5 sm:text-sm">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          <label className="flex flex-col gap-1 text-xs sm:gap-1.5 sm:text-sm">
             <span className="font-medium text-stone-700">Por time</span>
             <input
               type="number"
@@ -344,17 +353,45 @@ export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
               className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
             />
           </label>
+          <label className="flex flex-col gap-1 text-xs sm:gap-1.5 sm:text-sm">
+            <span className="font-medium text-stone-700">Data</span>
+            <input
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs sm:gap-1.5 sm:text-sm">
+            <span className="font-medium text-stone-700">Horário</span>
+            <input
+              type="time"
+              value={eventTime}
+              onChange={(e) => setEventTime(e.target.value)}
+              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
+            />
+          </label>
+          <label className="col-span-2 flex flex-col gap-1 text-xs sm:col-span-1 sm:gap-1.5 sm:text-sm">
+            <span className="font-medium text-stone-700">Local</span>
+            <input
+              type="text"
+              value={eventLocation}
+              onChange={(e) => setEventLocation(e.target.value)}
+              placeholder="Ex.: Quadra do clube"
+              className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
+            />
+          </label>
+        </div>
 
-          <div className="flex">
-            <button
-              type="button"
-              disabled={!canDraw}
-              onClick={handleDraw}
-              className="bg-brand hover:bg-brand-hover w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
-            >
-              {result ? 'Sortear de novo' : 'Sortear times'}
-            </button>
-          </div>
+        <div className="flex">
+          <button
+            type="button"
+            disabled={!canDraw}
+            onClick={handleDraw}
+            className="bg-brand hover:bg-brand-hover w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:py-2"
+          >
+            {result ? 'Sortear de novo' : 'Sortear times'}
+          </button>
         </div>
 
         <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
@@ -402,6 +439,13 @@ export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
           <TeamResult
             result={result}
             teamSize={teamSize || 1}
+            event={
+              {
+                date: eventDate,
+                time: eventTime,
+                location: eventLocation,
+              } satisfies TeamsEventInfo
+            }
             onChange={setResult}
           />
         </section>

@@ -1,13 +1,29 @@
 import { useState } from 'react'
 import type { DrawResult } from '../lib/drawTeams'
-import { downloadImage, generateTeamsImage } from '../lib/teamsImage'
+import {
+  downloadImage,
+  generateTeamsImage,
+  type TeamsEventInfo,
+} from '../lib/teamsImage'
 
 type TeamsShareProps = {
   result: DrawResult
   teamSize: number
+  event: TeamsEventInfo
 }
 
-export function TeamsShare({ result, teamSize }: TeamsShareProps) {
+function shareText(event: TeamsEventInfo): string {
+  const parts = ['Confira os times sorteados!']
+  if (event.date.trim()) {
+    const [y, m, d] = event.date.split('-')
+    parts.push(d && m && y ? `${d}/${m}/${y}` : event.date.trim())
+  }
+  if (event.time.trim()) parts.push(event.time.trim())
+  if (event.location.trim()) parts.push(event.location.trim())
+  return parts.join(' · ')
+}
+
+export function TeamsShare({ result, teamSize, event }: TeamsShareProps) {
   const [generating, setGenerating] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -15,7 +31,7 @@ export function TeamsShare({ result, teamSize }: TeamsShareProps) {
     setGenerating(true)
     setMessage('')
     try {
-      return await generateTeamsImage(result, teamSize)
+      return await generateTeamsImage(result, teamSize, event)
     } finally {
       setGenerating(false)
     }
@@ -39,7 +55,7 @@ export function TeamsShare({ result, teamSize }: TeamsShareProps) {
       })
       const shareData: ShareData = {
         title: 'Times — Vôlei dos Forrozeiros',
-        text: 'Confira os times sorteados!',
+        text: shareText(event),
         files: [file],
       }
 
