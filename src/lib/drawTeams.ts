@@ -1,3 +1,4 @@
+import type { DrawConstraints } from './constraints'
 import type { Player, Sexo } from '../types/player'
 
 export type DrawnTeam = {
@@ -93,41 +94,92 @@ function assignByLowestStars(
   return leftover
 }
 
-function fillFullTeams(
+function placePlayer(
+  teams: Player[][],
+  player: Player,
+  teamIndex: number,
+  teamSize: number,
+): boolean {
+  if (teamIndex < 0 || teamIndex >= teams.length) return false
+  if (teams[teamIndex].some((p) => p.id === player.id)) return true
+  if (teams[teamIndex].length >= teamSize) return false
+  teams[teamIndex].push(player)
+  return true
+}
+
+function applyConstraints(
   participants: Player[],
-  teamCount: number,
+  teams: Player[][],
+  teamSize: number,
+  constraints: DrawConstraints,
+): Player[] {
+  const byId = new Map(participants.map((player) => [player.id, player]))
+  const placed = new Set<string>()
+
+  for (const [playerId, teamIndex] of Object.entries(constraints.teamLocks)) {
+    const player = byId.get(playerId)
+    if (!player || placed.has(playerId)) continue
+    const target = Math.min(Math.max(0, teamIndex), teams.length - 1)
+    if (placePlayer(teams, player, target, teamSize)) placed.add(playerId)
+  }
+
+  for (const [idA, idB] of constraints.pairs) {
+    const playerA = byId.get(idA)
+    const playerB = byId.get(idB)
+    if (!playerA || !playerB) continue
+
+    if (placed.has(idA) && placed.has(idB)) continue
+
+    if (placed.has(idA) !== placed.has(idB)) {
+      const fixedId = placed.has(idA) ? idA : idB
+      const other = placed.has(idA) ? playerB : playerA
+      const otherId = other.id
+      const teamIndex = teams.findIndex((team) => team.some((p) => p.id === fixedId))
+      if (teamIndex >= 0 && placePlayer(teams, other, teamIndex, teamSize)) {
+        placed.add(otherId)
+      }
+      continue
+    }
+
+    let teamIndex = teams.findIndex((team) => team.length + 2 <= teamSize)
+    if (teamIndex === -1) teamIndex = pickTeamIndex(teams, teamSize)
+    if (teamIndex === -1) continue
+    if (placePlayer(teams, playerA, teamIndex, teamSize)) placed.add(idA)
+    if (placePlayer(teams, playerB, teamIndex, teamSize)) placed.add(idB)
+  }
+
+  return participants.filter((player) => !placed.has(player.id))
+}
+
+function fillRemaining(
+  players: Player[],
+  teams: Player[][],
   teamSize: number,
   balanceByGender: boolean,
-): Player[][] {
-  const teams: Player[][] = Array.from({ length: teamCount }, () => [])
-
+) {
   if (!balanceByGender) {
-    assignByLowestStars(participants, teams, teamSize)
-    return teams
+    assignByLowestStars(players, teams, teamSize)
+    return
   }
 
-  const bySexo: Record<Sexo, Player[]> = {
-    feminino: [],
-    masculino: [],
-  }
-
-  for (const player of participants) {
-    bySexo[player.sexo].push(player)
-  }
+  const bySexo: Record<Sexo, Player[]> = { feminino: [], masculino: [] }
+  for (const player of players) bySexo[player.sexo].push(player)
 
   const minority =
     bySexo.feminino.length <= bySexo.masculino.length ? 'feminino' : 'masculino'
   const majority: Sexo = minority === 'feminino' ? 'masculino' : 'feminino'
 
   const afterMinority = assignRoundRobin(bySexo[minority], teams, teamSize)
-  const majorityPool = shuffleStableByStars([...bySexo[majority], ...afterMinority])
-  assignByLowestStars(majorityPool, teams, teamSize)
-
-  return teams
+  assignByLowestStars(
+    shuffleStableByStars([...bySexo[majority], ...afterMinority]),
+    teams,
+    teamSize,
+  )
 }
 
 export type DrawOptions = {
   balanceByGender?: boolean
+  constraints?: DrawConstraints
 }
 
 export function drawTeams(
@@ -135,7 +187,7 @@ export function drawTeams(
   teamSize: number,
   options: DrawOptions = {},
 ): DrawResult {
-  const { balanceByGender = true } = options
+  const { balanceByGender = true, constraints } = options
 
   if (teamSize < 1 || players.length === 0) {
     return { teams: [] }
@@ -147,32 +199,47 @@ export function drawTeams(
 
   if (fullTeamCount === 0) {
     return {
-      teams: [
-        {
-          players: shuffled,
-          incomplete: true,
-        },
-      ],
+      teams: [{ players: shuffled, incomplete: true }],
     }
   }
 
-  const participants = shuffled.slice(0, fullTeamCount * teamSize)
-  const leftover = shuffled.slice(fullTeamCount * teamSize)
-  const fullTeams = fillFullTeams(participants, fullTeamCount, teamSize, balanceByGender)
+  const teamCount = fullTeamCount + (remainder > 0 ? 1 : 0)
+  const teams: Player[][] = Array.from({ length: teamCount }, () => [])
+  const remaining = constraints
+    ? applyConstraints(shuffled, teams, teamSize, constraints)
+    : [...shuffled]
 
-  const teams: DrawnTeam[] = fullTeams.map((teamPlayers) => ({
-    players: teamPlayers,
-    incomplete: false,
-  }))
+  // Fill full-size teams (0..fullTeamCount-1) first, then incomplete bucket
+  const fullTeams = teams.slice(0, fullTeamCount)
+  const incompleteTeam = remainder > 0 ? teams[fullTeamCount] : null
 
-  if (remainder > 0 && leftover.length > 0) {
-    teams.push({
-      players: leftover,
-      incomplete: true,
-    })
+  const fullSlots = fullTeams.reduce(
+    (sum, team) => sum + Math.max(0, teamSize - team.length),
+    0,
+  )
+  const incompleteSlots = incompleteTeam
+    ? Math.max(0, remainder - incompleteTeam.length)
+    : 0
+
+  const forFull = remaining.slice(0, fullSlots)
+  const forIncomplete = remaining.slice(fullSlots, fullSlots + incompleteSlots)
+
+  fillRemaining(forFull, fullTeams, teamSize, balanceByGender)
+
+  if (incompleteTeam) {
+    for (const player of forIncomplete) {
+      if (incompleteTeam.length < remainder) incompleteTeam.push(player)
+    }
   }
 
-  return { teams }
+  return {
+    teams: teams
+      .filter((team) => team.length > 0)
+      .map((teamPlayers) => ({
+        players: teamPlayers,
+        incomplete: teamPlayers.length < teamSize,
+      })),
+  }
 }
 
 export function teamStats(team: Player[]) {

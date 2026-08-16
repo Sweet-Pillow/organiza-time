@@ -1,25 +1,50 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  EMPTY_CONSTRAINTS,
+  loadConstraints,
+  saveConstraints,
+  type DrawConstraints,
+} from '../lib/constraints'
 import { drawTeams, type DrawResult } from '../lib/drawTeams'
 import { filterPlayers } from '../lib/filterPlayers'
+import {
+  appendDrawHistory,
+  loadDrawHistory,
+  saveDrawHistory,
+  type DrawHistoryEntry,
+} from '../lib/history'
 import { EMPTY_FILTERS, type PlayerFiltersState } from '../types/filters'
 import type { Player } from '../types/player'
 import { POSICAO_LABELS } from '../types/player'
+import { DrawConstraintsPanel } from './DrawConstraintsPanel'
+import { DrawHistoryPanel } from './DrawHistoryPanel'
 import { GenderIcon } from './GenderIcon'
 import { PlayerFilters } from './PlayerFilters'
 import { TeamResult } from './TeamResult'
 
 type DrawSetupProps = {
   players: Player[]
+  onGoToPlayers: () => void
 }
 
-export function DrawSetup({ players }: DrawSetupProps) {
+export function DrawSetup({ players, onGoToPlayers }: DrawSetupProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [teamSizeInput, setTeamSizeInput] = useState('4')
   const [balanceByGender, setBalanceByGender] = useState(true)
   const [result, setResult] = useState<DrawResult | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
+  const [constraints, setConstraints] = useState<DrawConstraints>(() =>
+    loadConstraints(),
+  )
+  const [history, setHistory] = useState<DrawHistoryEntry[]>(() => loadDrawHistory())
+  const [showRules, setShowRules] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
 
   const teamSize = teamSizeInput === '' ? 0 : Number(teamSizeInput)
+
+  useEffect(() => {
+    saveConstraints(constraints)
+  }, [constraints])
 
   const visiblePlayers = useMemo(
     () => filterPlayers(players, filters),
@@ -44,6 +69,9 @@ export function DrawSetup({ players }: DrawSetupProps) {
     teamSize > 0 ? selectedPlayers.length % teamSize : 0
   const canDraw =
     selectedPlayers.length > 0 && Number.isFinite(teamSize) && teamSize > 0
+  const teamCountHint = canDraw
+    ? teamCount + (leftoverCount > 0 ? 1 : 0)
+    : 4
 
   function togglePlayer(id: string) {
     setResult(null)
@@ -70,7 +98,16 @@ export function DrawSetup({ players }: DrawSetupProps) {
 
   function handleDraw() {
     if (!canDraw) return
-    setResult(drawTeams(selectedPlayers, teamSize, { balanceByGender }))
+    const next = drawTeams(selectedPlayers, teamSize, {
+      balanceByGender,
+      constraints,
+    })
+    setResult(next)
+    if (next.teams.length > 0) {
+      const updated = appendDrawHistory(history, next, teamSize, balanceByGender)
+      setHistory(updated)
+      saveDrawHistory(updated)
+    }
   }
 
   function handleTeamSizeChange(raw: string) {
@@ -85,11 +122,46 @@ export function DrawSetup({ players }: DrawSetupProps) {
     setTeamSizeInput(String(Math.floor(parsed)))
   }
 
+  function restoreHistory(entry: DrawHistoryEntry) {
+    const restored: DrawResult = {
+      teams: entry.teams.map((team) => ({
+        incomplete: team.incomplete,
+        players: team.players.map((player) => {
+          const live = players.find((p) => p.id === player.id)
+          if (live) return live
+          return {
+            id: player.id,
+            nome: player.nome,
+            sexo: player.sexo === 'feminino' ? 'feminino' : 'masculino',
+            posicao: 'qualquer',
+            estrelas: Math.min(5, Math.max(1, player.estrelas)) as 1 | 2 | 3 | 4 | 5,
+          }
+        }),
+      })),
+    }
+    setTeamSizeInput(String(entry.teamSize))
+    setBalanceByGender(entry.balanceByGender)
+    setResult(restored)
+    setShowHistory(false)
+  }
+
   if (players.length === 0) {
     return (
-      <p className="text-sm text-stone-500">
-        Cadastre jogadores na aba Jogadores antes de sortear os times.
-      </p>
+      <div className="rounded-xl border border-dashed border-stone-300 bg-white/70 p-6 text-center">
+        <h2 className="font-display text-xl font-semibold text-stone-900">
+          Nenhum jogador cadastrado
+        </h2>
+        <p className="mt-2 text-sm text-stone-600">
+          Cadastre o elenco antes de montar os times do dia.
+        </p>
+        <button
+          type="button"
+          onClick={onGoToPlayers}
+          className="bg-brand hover:bg-brand-hover mt-4 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition"
+        >
+          Ir para Jogadores
+        </button>
+      </div>
     )
   }
 
@@ -100,15 +172,37 @@ export function DrawSetup({ players }: DrawSetupProps) {
           <h2 className="font-display text-xl font-semibold text-stone-900 sm:text-2xl">
             Quem vai jogar
           </h2>
-          <button
-            type="button"
-            onClick={toggleVisible}
-            disabled={visiblePlayers.length === 0}
-            className="text-brand text-sm font-medium underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-stone-400 disabled:no-underline"
-          >
-            {allVisibleSelected ? 'Desmarcar visíveis' : 'Marcar visíveis'}
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setShowHistory((value) => !value)}
+              className="text-sm font-medium text-stone-600 underline-offset-2 hover:underline"
+            >
+              {showHistory ? 'Ocultar histórico' : 'Histórico'}
+            </button>
+            <button
+              type="button"
+              onClick={toggleVisible}
+              disabled={visiblePlayers.length === 0}
+              className="text-brand text-sm font-medium underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-stone-400 disabled:no-underline"
+            >
+              {allVisibleSelected ? 'Desmarcar visíveis' : 'Marcar todos'}
+            </button>
+          </div>
         </div>
+
+        {showHistory ? (
+          <div className="rounded-xl border border-stone-200 bg-white/80 p-3 sm:p-4">
+            <DrawHistoryPanel
+              entries={history}
+              onRestore={restoreHistory}
+              onClear={() => {
+                setHistory([])
+                saveDrawHistory([])
+              }}
+            />
+          </div>
+        ) : null}
 
         <PlayerFilters
           value={filters}
@@ -119,6 +213,22 @@ export function DrawSetup({ players }: DrawSetupProps) {
           homens={homens}
         />
 
+        {selectedPlayers.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-stone-300 bg-white/70 p-4 text-center">
+            <p className="text-sm text-stone-600">
+              Nenhum jogador selecionado para o sorteio.
+            </p>
+            <button
+              type="button"
+              onClick={toggleVisible}
+              disabled={visiblePlayers.length === 0}
+              className="bg-brand hover:bg-brand-hover mt-3 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:bg-stone-300"
+            >
+              Marcar todos
+            </button>
+          </div>
+        ) : null}
+
         {visiblePlayers.length === 0 ? (
           <p className="text-sm text-stone-500">
             Nenhum jogador encontrado com esses filtros.
@@ -127,12 +237,13 @@ export function DrawSetup({ players }: DrawSetupProps) {
           <ul className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {visiblePlayers.map((player) => {
               const checked = selectedIds.has(player.id)
+              const locked = constraints.teamLocks[player.id]
               return (
                 <li key={player.id}>
                   <label
                     className={`flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border px-2 py-2 transition sm:gap-3 sm:rounded-xl sm:px-3 sm:py-2.5 ${
                       checked
-                      ? 'border-brand bg-accent-soft'
+                        ? 'border-brand bg-accent-soft'
                         : 'border-stone-200 bg-white hover:border-stone-300'
                     }`}
                   >
@@ -143,20 +254,20 @@ export function DrawSetup({ players }: DrawSetupProps) {
                       className="accent-brand size-4 shrink-0"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-stone-900 sm:text-base">
+                      <span className="flex items-center gap-1 truncate text-sm font-medium text-stone-900 sm:text-base">
                         {player.nome}
+                        {locked !== undefined ? (
+                          <span className="rounded bg-brand/10 px-1 text-[10px] font-semibold text-brand">
+                            T{locked + 1}
+                          </span>
+                        ) : null}
                       </span>
                       <span className="mt-0.5 flex items-center gap-1.5 text-xs text-stone-500">
                         <span>{player.estrelas}★</span>
                         <span className="text-stone-300" aria-hidden>
                           ·
                         </span>
-                        <span className="inline-flex items-center gap-0.5">
-                          <GenderIcon sexo={player.sexo} />
-                          <span className="sr-only">
-                            {player.sexo === 'feminino' ? 'Feminino' : 'Masculino'}
-                          </span>
-                        </span>
+                        <GenderIcon sexo={player.sexo} />
                         <span className="hidden items-center gap-1.5 sm:inline-flex">
                           <span className="text-stone-300" aria-hidden>
                             ·
@@ -176,14 +287,48 @@ export function DrawSetup({ players }: DrawSetupProps) {
           <p className="text-sm text-stone-500">
             <strong className="text-stone-700">{selectedPlayers.length}</strong>{' '}
             selecionado{selectedPlayers.length !== 1 ? 's' : ''}
-            {filters.nome ||
-            filters.sexo !== 'todos' ||
-            filters.posicao !== 'todos' ||
-            filters.estrelas !== 'todos'
-              ? ' (filtros só alteram a lista; a seleção permanece)'
-              : null}
           </p>
         ) : null}
+
+        <div className="rounded-xl border border-stone-200 bg-white/80 p-3 sm:p-4">
+          <button
+            type="button"
+            onClick={() => setShowRules((value) => !value)}
+            className="flex w-full items-center justify-between text-left"
+          >
+            <span className="font-display text-base font-semibold text-stone-900">
+              Travas e pares
+            </span>
+            <span className="text-stone-500">{showRules ? '−' : '+'}</span>
+          </button>
+          {showRules ? (
+            <div className="mt-3">
+              <DrawConstraintsPanel
+                players={players}
+                selectedIds={selectedIds}
+                constraints={constraints}
+                teamCountHint={teamCountHint}
+                onChange={(next) => {
+                  setResult(null)
+                  setConstraints(next)
+                }}
+              />
+              {(Object.keys(constraints.teamLocks).length > 0 ||
+                constraints.pairs.length > 0) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResult(null)
+                    setConstraints(EMPTY_CONSTRAINTS)
+                  }}
+                  className="mt-3 text-xs font-medium text-red-700 underline-offset-2 hover:underline"
+                >
+                  Limpar travas e pares
+                </button>
+              )}
+            </div>
+          ) : null}
+        </div>
       </section>
 
       <section className="sticky bottom-2 z-10 flex flex-col gap-3 rounded-xl border border-stone-200 bg-white/95 p-3 shadow-lg backdrop-blur-md sm:static sm:gap-4 sm:p-5 sm:shadow-none">
@@ -239,8 +384,7 @@ export function DrawSetup({ players }: DrawSetupProps) {
               {leftoverCount > 0 ? (
                 <>
                   {teamCount > 0 ? ' + ' : null}
-                  <strong>1</strong> incompleto ({leftoverCount}/
-                  {teamSize})
+                  <strong>1</strong> incompleto ({leftoverCount}/{teamSize})
                 </>
               ) : null}
             </>
@@ -255,7 +399,11 @@ export function DrawSetup({ players }: DrawSetupProps) {
           <h2 className="font-display text-xl font-semibold text-stone-900 sm:text-2xl">
             Resultado
           </h2>
-          <TeamResult result={result} teamSize={teamSize} />
+          <TeamResult
+            result={result}
+            teamSize={teamSize || 1}
+            onChange={setResult}
+          />
         </section>
       ) : null}
     </div>

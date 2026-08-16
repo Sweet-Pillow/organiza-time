@@ -14,6 +14,35 @@ function normalizeName(value: string) {
     .replace(/\p{M}/gu, '')
 }
 
+export function previewImportPlayers(
+  current: Player[],
+  incoming: Player[],
+): { toAdd: Player[]; skipped: Player[] } {
+  const existingIds = new Set(current.map((player) => player.id))
+  const existingNames = new Set(current.map((player) => normalizeName(player.nome)))
+  const toAdd: Player[] = []
+  const skipped: Player[] = []
+
+  for (const player of incoming) {
+    const nameKey = normalizeName(player.nome)
+    if (existingNames.has(nameKey)) {
+      skipped.push(player)
+      continue
+    }
+
+    const id = existingIds.has(player.id) ? crypto.randomUUID() : player.id
+    existingIds.add(id)
+    existingNames.add(nameKey)
+    toAdd.push({
+      ...player,
+      id,
+      nome: player.nome.trim(),
+    })
+  }
+
+  return { toAdd, skipped }
+}
+
 export function usePlayers() {
   const [players, setPlayers] = useState<Player[]>(() => loadPlayers())
 
@@ -37,33 +66,16 @@ export function usePlayers() {
   }
 
   function importPlayers(incoming: Player[]) {
-    const existingIds = new Set(players.map((player) => player.id))
-    const existingNames = new Set(players.map((player) => normalizeName(player.nome)))
-    const toAdd: Player[] = []
-    let skipped = 0
-
-    for (const player of incoming) {
-      const nameKey = normalizeName(player.nome)
-      if (existingNames.has(nameKey)) {
-        skipped += 1
-        continue
-      }
-
-      const id = existingIds.has(player.id) ? createId() : player.id
-      existingIds.add(id)
-      existingNames.add(nameKey)
-      toAdd.push({
-        ...player,
-        id,
-        nome: player.nome.trim(),
-      })
-    }
-
+    const { toAdd, skipped } = previewImportPlayers(players, incoming)
     if (toAdd.length > 0) {
       setPlayers((current) => [...current, ...toAdd])
     }
+    return { added: toAdd.length, skipped: skipped.length }
+  }
 
-    return { added: toAdd.length, skipped }
+  function applyImport(toAdd: Player[]) {
+    if (toAdd.length === 0) return
+    setPlayers((current) => [...current, ...toAdd])
   }
 
   return {
@@ -72,5 +84,6 @@ export function usePlayers() {
     updatePlayer,
     removePlayer,
     importPlayers,
+    applyImport,
   }
 }

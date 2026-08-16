@@ -4,7 +4,7 @@ import { Modal } from './components/Modal'
 import { PlayerFilters } from './components/PlayerFilters'
 import { PlayerForm } from './components/PlayerForm'
 import { PlayerList } from './components/PlayerList'
-import { usePlayers } from './hooks/usePlayers'
+import { previewImportPlayers, usePlayers } from './hooks/usePlayers'
 import { filterPlayers } from './lib/filterPlayers'
 import {
   exportPlayersJson,
@@ -15,8 +15,13 @@ import type { Player, PlayerInput } from './types/player'
 
 type Tab = 'jogadores' | 'sorteio'
 
+type ImportPreview = {
+  toAdd: Player[]
+  skipped: Player[]
+}
+
 export default function App() {
-  const { players, addPlayer, updatePlayer, removePlayer, importPlayers } =
+  const { players, addPlayer, updatePlayer, removePlayer, applyImport } =
     usePlayers()
   const [tab, setTab] = useState<Tab>('jogadores')
   const [editing, setEditing] = useState<Player | null>(null)
@@ -24,6 +29,7 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null)
   const [rosterMessage, setRosterMessage] = useState('')
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
 
   const filteredPlayers = useMemo(
     () => filterPlayers(players, filters),
@@ -40,6 +46,10 @@ export default function App() {
 
   const closeDeleteModal = useCallback(() => {
     setPlayerToDelete(null)
+  }, [])
+
+  const closeImportPreview = useCallback(() => {
+    setImportPreview(null)
   }, [])
 
   function openCreate() {
@@ -81,7 +91,9 @@ export default function App() {
           : `Elenco com ${players.length} jogador${players.length !== 1 ? 'es' : ''} copiado.`,
       )
     } catch {
-      setRosterMessage('Não foi possível copiar o elenco. Verifique a permissão da área de transferência.')
+      setRosterMessage(
+        'Não foi possível copiar o elenco. Verifique a permissão da área de transferência.',
+      )
     }
   }
 
@@ -94,27 +106,38 @@ export default function App() {
         return
       }
 
-      const { added, skipped } = importPlayers(parsed.players)
-      if (added === 0 && skipped > 0) {
-        setRosterMessage(
-          `Nenhum jogador novo. ${skipped} já existiam no elenco.`,
-        )
+      const preview = previewImportPlayers(players, parsed.players)
+      if (preview.toAdd.length === 0 && preview.skipped.length === 0) {
+        setRosterMessage('Nada para importar.')
         return
       }
-      if (skipped > 0) {
-        setRosterMessage(
-          `${added} jogador${added !== 1 ? 'es' : ''} importado${added !== 1 ? 's' : ''}. ${skipped} ignorado${skipped !== 1 ? 's' : ''} (já existiam).`,
-        )
-        return
-      }
-      setRosterMessage(
-        `${added} jogador${added !== 1 ? 'es' : ''} importado${added !== 1 ? 's' : ''} com sucesso.`,
-      )
+      setImportPreview(preview)
     } catch {
       setRosterMessage(
         'Não foi possível ler a área de transferência. Copie o elenco e permita o acesso ao colar.',
       )
     }
+  }
+
+  function confirmImport() {
+    if (!importPreview) return
+    applyImport(importPreview.toAdd)
+    const added = importPreview.toAdd.length
+    const skipped = importPreview.skipped.length
+    setImportPreview(null)
+    if (added === 0 && skipped > 0) {
+      setRosterMessage(`Nenhum jogador novo. ${skipped} já existiam no elenco.`)
+      return
+    }
+    if (skipped > 0) {
+      setRosterMessage(
+        `${added} jogador${added !== 1 ? 'es' : ''} importado${added !== 1 ? 's' : ''}. ${skipped} ignorado${skipped !== 1 ? 's' : ''}.`,
+      )
+      return
+    }
+    setRosterMessage(
+      `${added} jogador${added !== 1 ? 'es' : ''} importado${added !== 1 ? 's' : ''} com sucesso.`,
+    )
   }
 
   return (
@@ -257,7 +280,7 @@ export default function App() {
             </section>
           </div>
         ) : (
-          <DrawSetup players={players} />
+          <DrawSetup players={players} onGoToPlayers={() => setTab('jogadores')} />
         )}
       </main>
 
@@ -302,6 +325,67 @@ export default function App() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(importPreview)}
+        title="Confirmar importação"
+        onClose={closeImportPreview}
+      >
+        {importPreview ? (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-stone-600">
+              Vai adicionar{' '}
+              <strong className="text-stone-900">{importPreview.toAdd.length}</strong> e
+              ignorar{' '}
+              <strong className="text-stone-900">{importPreview.skipped.length}</strong>.
+            </p>
+
+            {importPreview.toAdd.length > 0 ? (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Novos
+                </p>
+                <ul className="mt-1 max-h-32 overflow-y-auto text-sm text-stone-700">
+                  {importPreview.toAdd.map((player) => (
+                    <li key={player.id}>+ {player.nome}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {importPreview.skipped.length > 0 ? (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                  Já existem
+                </p>
+                <ul className="mt-1 max-h-32 overflow-y-auto text-sm text-stone-700">
+                  {importPreview.skipped.map((player) => (
+                    <li key={`${player.id}-${player.nome}`}>· {player.nome}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={confirmImport}
+                disabled={importPreview.toAdd.length === 0}
+                className="bg-brand hover:bg-brand-hover flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-stone-300 sm:flex-none"
+              >
+                Confirmar importação
+              </button>
+              <button
+                type="button"
+                onClick={closeImportPreview}
+                className="rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : null}
       </Modal>
     </div>
   )
