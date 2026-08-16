@@ -64,16 +64,12 @@ export default function App() {
       <div className="court-lines pointer-events-none fixed inset-0 opacity-[0.07]" aria-hidden />
 
       <header className="relative border-b border-stone-900/10">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8 sm:px-6 sm:py-10">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-800/70">
-            Vôlei
-          </p>
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
+        <div className="mx-auto flex max-w-5xl items-baseline gap-3 px-4 py-4 sm:px-6">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-stone-900">
             organiza-time
           </h1>
-          <p className="max-w-lg text-base text-stone-600 sm:text-lg">
-            Cadastre o elenco, escolha quem joga e sorteie times equilibrados por
-            nível e gênero.
+          <p className="hidden text-sm text-stone-500 sm:block">
+            Times de vôlei equilibrados
           </p>
         </div>
       </header>
