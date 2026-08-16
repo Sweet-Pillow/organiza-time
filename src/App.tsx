@@ -1,16 +1,46 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { DrawSetup } from './components/DrawSetup'
+import { PlayerFilters } from './components/PlayerFilters'
 import { PlayerForm } from './components/PlayerForm'
 import { PlayerList } from './components/PlayerList'
 import { usePlayers } from './hooks/usePlayers'
+import { EMPTY_FILTERS, type PlayerFiltersState } from './types/filters'
 import type { Player, PlayerInput } from './types/player'
 
 type Tab = 'jogadores' | 'sorteio'
+
+function normalizeName(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+}
+
+function filterPlayers(players: Player[], filters: PlayerFiltersState) {
+  const query = normalizeName(filters.nome)
+
+  return players.filter((player) => {
+    if (query && !normalizeName(player.nome).includes(query)) return false
+    if (filters.sexo !== 'todos' && player.sexo !== filters.sexo) return false
+    if (filters.posicao !== 'todos' && player.posicao !== filters.posicao) return false
+    if (filters.estrelas !== 'todos' && player.estrelas !== filters.estrelas) {
+      return false
+    }
+    return true
+  })
+}
 
 export default function App() {
   const { players, addPlayer, updatePlayer, removePlayer } = usePlayers()
   const [tab, setTab] = useState<Tab>('jogadores')
   const [editing, setEditing] = useState<Player | null>(null)
+  const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
+
+  const filteredPlayers = useMemo(
+    () => filterPlayers(players, filters),
+    [players, filters],
+  )
 
   const mulheres = players.filter((p) => p.sexo === 'feminino').length
   const homens = players.filter((p) => p.sexo === 'masculino').length
@@ -105,8 +135,15 @@ export default function App() {
                 <h2 className="font-display text-xl font-semibold text-stone-900">
                   Elenco
                 </h2>
+                <PlayerFilters
+                  value={filters}
+                  onChange={setFilters}
+                  resultCount={filteredPlayers.length}
+                  totalCount={players.length}
+                />
                 <PlayerList
-                  players={players}
+                  players={filteredPlayers}
+                  totalCount={players.length}
                   onEdit={setEditing}
                   onRemove={handleRemove}
                 />

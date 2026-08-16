@@ -4,15 +4,29 @@ import { StarRating } from './StarRating'
 
 type PlayerListProps = {
   players: Player[]
+  totalCount: number
   onEdit: (player: Player) => void
   onRemove: (id: string) => void
 }
 
-export function PlayerList({ players, onEdit, onRemove }: PlayerListProps) {
-  if (players.length === 0) {
+export function PlayerList({
+  players,
+  totalCount,
+  onEdit,
+  onRemove,
+}: PlayerListProps) {
+  if (totalCount === 0) {
     return (
       <p className="text-sm text-stone-500">
         Nenhum jogador cadastrado ainda. Use o formulário ao lado para começar.
+      </p>
+    )
+  }
+
+  if (players.length === 0) {
+    return (
+      <p className="text-sm text-stone-500">
+        Nenhum jogador encontrado com esses filtros.
       </p>
     )
   }
