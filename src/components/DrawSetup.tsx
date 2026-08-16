@@ -13,10 +13,12 @@ type DrawSetupProps = {
 
 export function DrawSetup({ players }: DrawSetupProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
-  const [teamSize, setTeamSize] = useState(4)
+  const [teamSizeInput, setTeamSizeInput] = useState('4')
   const [balanceByGender, setBalanceByGender] = useState(true)
   const [result, setResult] = useState<DrawResult | null>(null)
   const [filters, setFilters] = useState<PlayerFiltersState>(EMPTY_FILTERS)
+
+  const teamSize = teamSizeInput === '' ? 0 : Number(teamSizeInput)
 
   const visiblePlayers = useMemo(
     () => filterPlayers(players, filters),
@@ -39,7 +41,8 @@ export function DrawSetup({ players }: DrawSetupProps) {
     teamSize > 0 ? Math.floor(selectedPlayers.length / teamSize) : 0
   const leftoverCount =
     teamSize > 0 ? selectedPlayers.length % teamSize : 0
-  const canDraw = selectedPlayers.length > 0 && teamSize > 0
+  const canDraw =
+    selectedPlayers.length > 0 && Number.isFinite(teamSize) && teamSize > 0
 
   function togglePlayer(id: string) {
     setResult(null)
@@ -67,6 +70,18 @@ export function DrawSetup({ players }: DrawSetupProps) {
   function handleDraw() {
     if (!canDraw) return
     setResult(drawTeams(selectedPlayers, teamSize, { balanceByGender }))
+  }
+
+  function handleTeamSizeChange(raw: string) {
+    setResult(null)
+    if (raw === '') {
+      setTeamSizeInput('')
+      return
+    }
+
+    const parsed = Number(raw)
+    if (!Number.isFinite(parsed) || parsed < 0) return
+    setTeamSizeInput(String(Math.floor(parsed)))
   }
 
   if (players.length === 0) {
@@ -164,13 +179,10 @@ export function DrawSetup({ players }: DrawSetupProps) {
             <span className="font-medium text-stone-700">Por time</span>
             <input
               type="number"
-              min={1}
+              min={0}
               max={Math.max(selectedPlayers.length, 1)}
-              value={teamSize}
-              onChange={(e) => {
-                setResult(null)
-                setTeamSize(Math.max(1, Number(e.target.value) || 1))
-              }}
+              value={teamSizeInput}
+              onChange={(e) => handleTeamSizeChange(e.target.value)}
               className="focus:ring-brand/30 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:ring-2"
             />
           </label>
