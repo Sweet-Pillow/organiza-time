@@ -4,6 +4,7 @@ import { filterPlayers } from '../lib/filterPlayers'
 import { EMPTY_FILTERS, type PlayerFiltersState } from '../types/filters'
 import type { Player } from '../types/player'
 import { POSICAO_LABELS } from '../types/player'
+import { GenderIcon } from './GenderIcon'
 import { PlayerFilters } from './PlayerFilters'
 import { TeamResult } from './TeamResult'
 
@@ -145,10 +146,22 @@ export function DrawSetup({ players }: DrawSetupProps) {
                       <span className="block truncate text-sm font-medium text-stone-900 sm:text-base">
                         {player.nome}
                       </span>
-                      <span className="text-xs text-stone-500">
-                        {player.estrelas}★ · {player.sexo === 'feminino' ? 'F' : 'M'}
-                        <span className="hidden sm:inline">
-                          {' '}· {POSICAO_LABELS[player.posicao]}
+                      <span className="mt-0.5 flex items-center gap-1.5 text-xs text-stone-500">
+                        <span>{player.estrelas}★</span>
+                        <span className="text-stone-300" aria-hidden>
+                          ·
+                        </span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <GenderIcon sexo={player.sexo} />
+                          <span className="sr-only">
+                            {player.sexo === 'feminino' ? 'Feminino' : 'Masculino'}
+                          </span>
+                        </span>
+                        <span className="hidden items-center gap-1.5 sm:inline-flex">
+                          <span className="text-stone-300" aria-hidden>
+                            ·
+                          </span>
+                          {POSICAO_LABELS[player.posicao]}
                         </span>
                       </span>
                     </span>

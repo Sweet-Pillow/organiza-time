@@ -1,5 +1,6 @@
 import type { Player } from '../types/player'
-import { POSICAO_LABELS, SEXO_LABELS } from '../types/player'
+import { POSICAO_LABELS } from '../types/player'
+import { GenderIcon } from './GenderIcon'
 import { StarRating } from './StarRating'
 
 type PlayerListProps = {
@@ -45,8 +46,17 @@ export function PlayerList({
                 {player.estrelas}★
               </span>
             </div>
-            <p className="truncate text-xs text-stone-500 sm:text-sm">
-              {SEXO_LABELS[player.sexo]} · {POSICAO_LABELS[player.posicao]}
+            <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-xs text-stone-500 sm:text-sm">
+              <span className="inline-flex shrink-0 items-center gap-0.5">
+                <GenderIcon sexo={player.sexo} className="size-3.5 sm:size-4" />
+                <span className="sr-only">
+                  {player.sexo === 'feminino' ? 'Feminino' : 'Masculino'}
+                </span>
+              </span>
+              <span className="text-stone-300" aria-hidden>
+                ·
+              </span>
+              <span className="truncate">{POSICAO_LABELS[player.posicao]}</span>
             </p>
             <div className="mt-1 hidden sm:block">
               <StarRating value={player.estrelas} readOnly size="sm" />
